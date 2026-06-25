@@ -19,8 +19,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
-        with:
-          version: latest
 
       - name: Setup NodeJS ${{ vars.RTLDEV_MW_CI_NODE_VERSION || '24' }}
         uses: actions/setup-node@v6
