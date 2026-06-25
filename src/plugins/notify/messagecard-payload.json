@@ -1,0 +1,63 @@
+{
+  "@type": "MessageCard",
+  "@context": "http://schema.org/extensions",
+  "themeColor": "39ff14",
+  "summary": "A new change has just been reported by 3rd-party Software Integrations",
+  "sections": [
+    {
+      "facts": [
+        {
+          "name": "Project:",
+          "value": ""
+        },
+        {
+          "name": "Release Type:",
+          "value": ""
+        }
+      ],
+      "markdown": true
+    }
+  ],
+  "potentialAction": [
+    {
+      "@type": "OpenUri",
+      "name": "Github Repository",
+      "targets": [
+        {
+          "os": "default",
+          "uri": ""
+        }
+      ]
+    },
+    {
+      "@type": "OpenUri",
+      "name": "Release Notes",
+      "targets": [
+        {
+          "os": "default",
+          "uri": ""
+        }
+      ]
+    },
+    {
+      "@type": "OpenUri",
+      "name": "Jira Issue",
+      "targets": [
+        {
+          "os": "default",
+          "uri": ""
+        }
+      ]
+    },
+    {
+      "@type": "OpenUri",
+      "name": "Email Us",
+      "targets": [
+        {
+          "os": "default",
+          "uri": "https://outlook.office.com/mail/deeplink/compose?to=middleware@hexonet.net"
+        }
+      ]
+    }
+  ]
+}

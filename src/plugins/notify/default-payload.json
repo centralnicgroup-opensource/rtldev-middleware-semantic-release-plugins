@@ -1,0 +1,97 @@
+{
+  "type": "message",
+  "width": "stretch",
+  "attachments": [
+    {
+      "contentType": "application/vnd.microsoft.card.adaptive",
+      "contentUrl": null,
+      "content": {
+        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        "type": "AdaptiveCard",
+        "version": "1.5",
+        "verticalContentAlignment": "Center",
+        "body": [
+          {
+            "type": "ColumnSet",
+            "columns": [
+              {
+                "type": "Column",
+                "width": "50px",
+                "items": [
+                  {
+                    "type": "Image",
+                    "style": "person",
+                    "url": "",
+                    "size": "small",
+                    "height": "50px"
+                  }
+                ],
+                "id": "productImage"
+              },
+              {
+                "type": "Column",
+                "items": [
+                  {
+                    "type": "TextBlock",
+                    "weight": "bolder",
+                    "text": "",
+                    "wrap": true,
+                    "style": "columnHeader",
+                    "id": "projectName"
+                  },
+                  {
+                    "type": "TextBlock",
+                    "spacing": "none",
+                    "text": "",
+                    "isSubtle": true,
+                    "wrap": true,
+                    "size": "small",
+                    "id": "releaseInfo"
+                  }
+                ],
+                "width": "stretch"
+              }
+            ],
+            "id": "header",
+            "bleed": true,
+            "style": ""
+          },
+          {
+            "type": "TextBlock",
+            "text": "",
+            "wrap": true,
+            "fontType": "Monospace",
+            "id": "changeLog",
+            "isSubtle": true
+          }
+        ],
+        "actions": [
+          {
+            "type": "Action.OpenUrl",
+            "title": "Github Repository",
+            "url": "",
+            "id": "githubRepository"
+          },
+          {
+            "type": "Action.OpenUrl",
+            "title": "Release Notes",
+            "url": "",
+            "id": "releaseNotes"
+          },
+          {
+            "type": "Action.OpenUrl",
+            "title": "Jira Issue",
+            "url": "",
+            "id": "jiraIssue"
+          },
+          {
+            "type": "Action.OpenUrl",
+            "title": "Email Us",
+            "url": "mailto:middleware@hexonet.net",
+            "id": "emailUs"
+          }
+        ]
+      }
+    }
+  ]
+}
