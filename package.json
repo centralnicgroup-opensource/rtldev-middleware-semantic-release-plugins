@@ -29,10 +29,12 @@
   },
   "scripts": {
     "build": "find src test -name '*.js' -print0 2>/dev/null | xargs -0 -r -n1 node --check",
-    "test": "node --test",
+    "test": "node --env-file-if-exists=.env --test",
+    "test:coverage": "node --env-file-if-exists=.env --test --experimental-test-coverage --test-coverage-include='src/**/*.js' --test-coverage-exclude='test/**/*.js'",
+    "test:teams": "TEAMS_TEST_NOTIFICATION_ENABLED=true node --env-file-if-exists=.env --test test/plugins/notify/teams-notification.integration.test.js",
     "lint": "prettier --check .",
     "lint:fix": "prettier --write .",
-    "ci": "pnpm run build && pnpm run test && pnpm run lint"
+    "ci": "pnpm run build && pnpm run test:coverage && pnpm run lint"
   },
   "dependencies": {
     "@semantic-release/error": "^4.0.0",

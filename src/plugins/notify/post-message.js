@@ -16,8 +16,8 @@ export default async function postMessage(message, logger, teamsWebhook) {
 
       bodyText = await response.text();
 
-      if (response.ok && bodyText === "1") {
-        return bodyText;
+      if (response.ok) {
+        return bodyText || "1";
       }
 
       logger.log(`JSON message format invalid: ${bodyText}`);

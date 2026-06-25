@@ -36,7 +36,13 @@ jobs:
         run: pnpm run build
 
       - name: Test package
-        run: pnpm run test
+        run: pnpm run test:coverage
+
+      - name: Teams notification integration test
+        env:
+          TEAMS_TEST_NOTIFICATION_ENABLED: ${{ secrets.TEAMS_TEST_NOTIFICATION_URI != '' && 'true' || 'false' }}
+          TEAMS_TEST_NOTIFICATION_URI: ${{ secrets.TEAMS_TEST_NOTIFICATION_URI }}
+        run: pnpm run test:teams
 
       - name: Lint package
         run: pnpm run lint

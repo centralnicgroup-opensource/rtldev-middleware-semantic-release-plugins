@@ -53,3 +53,17 @@ The old one-plugin-per-repository setup should be deprecated in favor of this pa
 pnpm install
 pnpm run ci
 ```
+
+Coverage is generated with Node's built-in test runner and is scoped to `src/**/*.js`:
+
+```sh
+pnpm run test:coverage
+```
+
+The Teams webhook integration test is opt-in because it posts to a real endpoint. For local testing, copy `.env.example` to `.env`, set `TEAMS_TEST_NOTIFICATION_URI`, and run:
+
+```sh
+pnpm run test:teams
+```
+
+The GitHub test workflow uses the same variable name via `secrets.TEAMS_TEST_NOTIFICATION_URI`.
