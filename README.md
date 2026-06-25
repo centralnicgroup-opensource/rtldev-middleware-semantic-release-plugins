@@ -60,10 +60,12 @@ Coverage is generated with Node's built-in test runner and is scoped to `src/**/
 pnpm run test:coverage
 ```
 
-The Teams webhook integration test is opt-in because it posts to a real endpoint. For local testing, copy `.env.example` to `.env`, set `TEAMS_TEST_NOTIFICATION_URI`, and run:
+The Teams webhook integration test is opt-in because it posts to a real endpoint. For local testing, copy `.env.example` to `.env`, set `TEAMS_NOTIFICATION_URI`, and run:
 
 ```sh
 pnpm run test:teams
 ```
 
-The GitHub test workflow uses the same variable name via `secrets.TEAMS_TEST_NOTIFICATION_URI`.
+The GitHub test workflow uses the same variable name via `secrets.TEAMS_NOTIFICATION_URI`.
+
+Teams notifications target Microsoft Teams Workflows webhooks, created from the Workflows app template "Send webhook alerts to a channel" or equivalent. The default payload uses the Workflows-supported Adaptive Card request body shape. Do not create new webhook URLs with the deprecated "Incoming Webhook (to be retired)" Teams app.

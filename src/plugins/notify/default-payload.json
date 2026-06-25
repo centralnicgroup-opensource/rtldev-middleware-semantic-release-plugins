@@ -1,6 +1,5 @@
 {
   "type": "message",
-  "width": "stretch",
   "attachments": [
     {
       "contentType": "application/vnd.microsoft.card.adaptive",
@@ -8,7 +7,7 @@
       "content": {
         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
         "type": "AdaptiveCard",
-        "version": "1.5",
+        "version": "1.2",
         "verticalContentAlignment": "Center",
         "body": [
           {

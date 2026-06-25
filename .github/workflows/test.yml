@@ -38,8 +38,7 @@ jobs:
 
       - name: Teams notification integration test
         env:
-          TEAMS_TEST_NOTIFICATION_ENABLED: ${{ secrets.TEAMS_TEST_NOTIFICATION_URI != '' && 'true' || 'false' }}
-          TEAMS_TEST_NOTIFICATION_URI: ${{ secrets.TEAMS_TEST_NOTIFICATION_URI }}
+          TEAMS_NOTIFICATION_URI: ${{ secrets.TEAMS_NOTIFICATION_URI }}
         run: pnpm run test:teams
 
       - name: Lint package

@@ -92,9 +92,7 @@ function removeNulls(obj) {
     }
 
     for (const key in obj) {
-      if (obj[key] === null) {
-        delete obj[key];
-      } else {
+      if (obj[key] !== null) {
         obj[key] = removeNulls(obj[key]);
       }
     }

@@ -74,6 +74,16 @@ describe("teams notification", () => {
     assert.equal(url, "https://example.test/teams-webhook");
     assert.equal(options.method, "POST");
     assert.match(options.body, /internal test/);
+
+    const payload = JSON.parse(options.body);
+    assert.equal(payload.type, "message");
+    assert.equal(
+      payload.attachments[0].contentType,
+      "application/vnd.microsoft.card.adaptive",
+    );
+    assert.equal(payload.attachments[0].contentUrl, null);
+    assert.equal(payload.attachments[0].content.type, "AdaptiveCard");
+    assert.equal(payload.attachments[0].content.version, "1.2");
   });
 
   test("accepts successful Teams responses with empty bodies", async () => {
