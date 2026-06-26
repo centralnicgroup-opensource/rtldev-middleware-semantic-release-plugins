@@ -18,7 +18,10 @@
     "README.md",
     "LICENSE"
   ],
-  "repository": "github:centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins.git"
+  },
   "license": "MIT",
   "publishConfig": {
     "access": "public"
