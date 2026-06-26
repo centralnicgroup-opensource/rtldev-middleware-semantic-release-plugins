@@ -1,6 +1,6 @@
 {
   "name": "@team-internet/semantic-release-plugins",
-  "version": "0.0.0-development",
+  "version": "1.0.6",
   "private": false,
   "description": "CentralNic semantic-release plugin collection.",
   "type": "module",

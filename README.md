@@ -1,5 +1,12 @@
 # @team-internet/semantic-release-plugins
 
+[![npm version](https://img.shields.io/npm/v/@team-internet/semantic-release-plugins.svg)](https://www.npmjs.com/package/@team-internet/semantic-release-plugins)
+[![npm downloads](https://img.shields.io/npm/dm/@team-internet/semantic-release-plugins.svg)](https://www.npmjs.com/package/@team-internet/semantic-release-plugins)
+[![license](https://img.shields.io/npm/l/@team-internet/semantic-release-plugins.svg)](LICENSE)
+[![node](https://img.shields.io/node/v/@team-internet/semantic-release-plugins.svg)](package.json)
+[![test](https://github.com/centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/actions/workflows/test.yml/badge.svg)](https://github.com/centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/actions/workflows/test.yml)
+[![release](https://github.com/centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/actions/workflows/release.yml/badge.svg)](https://github.com/centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/actions/workflows/release.yml)
+
 Reusable semantic-release plugins for Team Internet release pipelines.
 
 This package provides plugins for common release tasks: updating files with the next release version, sending Microsoft Teams notifications, overriding release notes, and publishing Maven projects.
