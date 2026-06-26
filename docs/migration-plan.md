@@ -10,18 +10,18 @@
 ## Phase 2
 
 - Move package publishing from the old repositories to this package.
-- Release `rtldev-middleware-semantic-release-plugins` as the only npm artifact.
+- Release `@team-internet/semantic-release-plugins` as the only npm artifact.
 - Update consuming repositories to use the new package subpaths.
 - Deprecate/archive old plugin repositories after consumers are migrated.
 
 ## Initial Package Map
 
-| Old repository                                      | New plugin subpath                                          |
-| --------------------------------------------------- | ----------------------------------------------------------- |
-| `rtldev-middleware-semantic-release-notes-override` | `rtldev-middleware-semantic-release-plugins/notes-override` |
-| `rtldev-middleware-semantic-release-notify-plugin`  | `rtldev-middleware-semantic-release-plugins/notify`         |
-| `rtldev-middleware-semantic-release-replace-plugin` | `rtldev-middleware-semantic-release-plugins/replace`        |
-| `rtldev-middleware-maven-semantic-release`          | `rtldev-middleware-semantic-release-plugins/maven`          |
+| Old repository                                      | New plugin subpath                                       |
+| --------------------------------------------------- | -------------------------------------------------------- |
+| `rtldev-middleware-semantic-release-notes-override` | `@team-internet/semantic-release-plugins/notes-override` |
+| `rtldev-middleware-semantic-release-notify-plugin`  | `@team-internet/semantic-release-plugins/notify`         |
+| `rtldev-middleware-semantic-release-replace-plugin` | `@team-internet/semantic-release-plugins/replace`        |
+| `rtldev-middleware-maven-semantic-release`          | `@team-internet/semantic-release-plugins/maven`          |
 
 ## Excluded For Now
 

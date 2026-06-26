@@ -21,7 +21,7 @@ function createContext() {
     env: {
       TEAMS_NOTIFICATION_URI: teamsNotificationUri,
       GITHUB_TOKEN: "test-github-token",
-      npm_package_name: "rtldev-middleware-semantic-release-plugins",
+      npm_package_name: "@team-internet/semantic-release-plugins",
     },
     branch: {
       name: "main",

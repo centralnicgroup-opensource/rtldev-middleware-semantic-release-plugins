@@ -18,12 +18,12 @@ Several semantic-release plugins are maintained in separate repositories even th
 
 ## Scope
 
-- Create one publishable npm package: `rtldev-middleware-semantic-release-plugins`.
+- Create one publishable npm package: `@team-internet/semantic-release-plugins`.
 - Import these plugins as independently invokable subpaths:
-  - `rtldev-middleware-semantic-release-plugins/notes-override`
-  - `rtldev-middleware-semantic-release-plugins/notify`
-  - `rtldev-middleware-semantic-release-plugins/replace`
-  - `rtldev-middleware-semantic-release-plugins/maven`
+  - `@team-internet/semantic-release-plugins/notes-override`
+  - `@team-internet/semantic-release-plugins/notify`
+  - `@team-internet/semantic-release-plugins/replace`
+  - `@team-internet/semantic-release-plugins/maven`
 - Add a small internal shared core module for common helpers.
 - Keep each plugin separately invokable from semantic-release configs.
 - Align GitHub workflows, Dependabot, and daily dependency refresh behavior.
