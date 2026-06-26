@@ -1,8 +1,10 @@
 # rtldev-middleware-semantic-release-plugins
 
-CentralNic semantic-release plugin collection published as one package with multiple subpath exports.
+CentralNic semantic-release plugin collection published as one npm package with multiple subpath exports.
 
 Use this package when a release pipeline needs CentralNic's shared helpers for Maven publishing, release-note overrides, Teams notifications, or release-time file replacements.
+
+The package name matches the repository short name: `rtldev-middleware-semantic-release-plugins`. Semantic-release configs use that package name plus the plugin subpath.
 
 ## Requirements
 
@@ -13,18 +15,20 @@ Use this package when a release pipeline needs CentralNic's shared helpers for M
 ## Installation
 
 ```sh
-pnpm add -D @centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins
+pnpm add -D rtldev-middleware-semantic-release-plugins
 ```
+
+In the examples below, replace `<package>` with `rtldev-middleware-semantic-release-plugins`.
 
 ## Published Plugins
 
-| Plugin subpath                                                                          | semantic-release hooks                              | Purpose                                                                                    |
-| --------------------------------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `@centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/replace`        | `prepare`                                           | Replace text in files using semantic-release context values.                               |
-| `@centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/notify`         | `verifyConditions`, `success`                       | Send a Microsoft Teams release notification.                                               |
-| `@centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/teams-notify`   | `verifyConditions`, `success`                       | Alias for `notify`.                                                                        |
-| `@centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/notes-override` | `verifyConditions`, `generateNotes`                 | Replace generated release notes with supplied text.                                        |
-| `@centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/maven`          | `verifyConditions`, `prepare`, `publish`, `success` | Update Maven versions, publish artifacts, and optionally commit the next snapshot version. |
+| Plugin ID        | semantic-release config value | semantic-release hooks                              | Purpose                                                                                    |
+| ---------------- | ----------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `replace`        | `<package>/replace`           | `prepare`                                           | Replace text in files using semantic-release context values.                               |
+| `notify`         | `<package>/notify`            | `verifyConditions`, `success`                       | Send a Microsoft Teams release notification.                                               |
+| `teams-notify`   | `<package>/teams-notify`      | `verifyConditions`, `success`                       | Alias for `notify`.                                                                        |
+| `notes-override` | `<package>/notes-override`    | `verifyConditions`, `generateNotes`                 | Replace generated release notes with supplied text.                                        |
+| `maven`          | `<package>/maven`             | `verifyConditions`, `prepare`, `publish`, `success` | Update Maven versions, publish artifacts, and optionally commit the next snapshot version. |
 
 ## Basic Usage
 
@@ -36,7 +40,7 @@ Add the plugin subpath you need to your semantic-release config.
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
     [
-      "@centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/replace",
+      "rtldev-middleware-semantic-release-plugins/replace",
       {
         "replacements": [
           {
@@ -47,7 +51,7 @@ Add the plugin subpath you need to your semantic-release config.
         ]
       }
     ],
-    "@centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/notify",
+    "rtldev-middleware-semantic-release-plugins/notify",
     "@semantic-release/github"
   ]
 }
@@ -61,7 +65,7 @@ Runs during `prepare` and delegates file updates to `replace-in-file`. Each repl
 
 ```json
 [
-  "@centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/replace",
+  "rtldev-middleware-semantic-release-plugins/replace",
   {
     "replacements": [
       {
@@ -84,7 +88,7 @@ Runs during `success` after configuration has been validated. The hook is option
 
 ```json
 [
-  "@centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/notify",
+  "rtldev-middleware-semantic-release-plugins/notify",
   {
     "teamsWebhook": "https://example.webhook.office.com/...",
     "packageName": "my-service"
@@ -110,7 +114,7 @@ Runs during `generateNotes` and returns the configured notes after stripping Mar
 
 ```json
 [
-  "@centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/notes-override",
+  "rtldev-middleware-semantic-release-plugins/notes-override",
   {
     "notes": "Release notes supplied by the pipeline"
   }
@@ -130,7 +134,7 @@ Runs Maven during the release lifecycle:
 
 ```json
 [
-  "@centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/maven",
+  "rtldev-middleware-semantic-release-plugins/maven",
   {
     "mvnw": true,
     "settingsPath": "./settings.xml",
@@ -167,22 +171,21 @@ The Maven plugin also has a `debug: true` option that passes `-X` to Maven.
 
 ## Release Troubleshooting
 
-### npm publish returns `E404 Scope not found`
+### npm publish returns a registry error
 
-`@semantic-release/npm` writes the release version to `package.json` during `prepare`, then publishes the package during `publish`. If npm returns an error like this, the package reached the registry publish step but npm rejected the scoped package name:
+`@semantic-release/npm` writes the release version to `package.json` during `prepare`, then publishes the package during `publish`. If npm returns a registry error during `publish`, the package reached npm but the registry rejected the package name, token, or access rights.
 
 ```text
-npm error 404 Not Found - PUT https://registry.npmjs.org/@centralnicgroup-opensource%2frtldev-middleware-semantic-release-plugins - Scope not found
+npm error 404 Not Found - PUT https://registry.npmjs.org/rtldev-middleware-semantic-release-plugins
 ```
 
-Check the npm-side setup for the package scope:
+Check the npm-side setup for the package:
 
-- The npm organization or user scope `@centralnicgroup-opensource` must exist on npm.
-- The token in `RTLDEV_MW_CI_NPM_TOKEN` must belong to an account that can publish under that scope.
-- For first publish of a public scoped package, keep `publishConfig.access` set to `public`.
-- If the package should not be published under that npm scope, rename `package.json#name` to the intended npm scope before releasing.
+- The package name `rtldev-middleware-semantic-release-plugins` must be available on npm, or the token must have access if it already exists.
+- The token in `RTLDEV_MW_CI_NPM_TOKEN` must belong to an account that can publish this package.
+- If the package should publish under a different npm name, update `package.json#name` before releasing.
 
-The warning about npm auto-correcting `repository` means the package metadata was not in npm's preferred object form. It does not cause the `E404`, but this repository keeps `repository.type` and `repository.url` explicit to avoid that warning.
+The warning about npm auto-correcting `repository` means the package metadata was not in npm's preferred object form. It does not cause registry publish failures, but this repository keeps `repository.type` and `repository.url` explicit to avoid that warning.
 
 ## Migration From Legacy Packages
 

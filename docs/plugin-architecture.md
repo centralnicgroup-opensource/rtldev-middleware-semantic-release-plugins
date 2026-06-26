@@ -70,10 +70,10 @@ This removes repeated lifecycle boilerplate from every plugin:
 
 ## Current Coverage
 
-- `@centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/notes-override` uses the base class and shared validators.
-- `@centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/notify` uses the base class, shared validators, and optional `success` hook handling.
-- `@centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/maven` uses the base class and `afterVerify` for the Maven executable check.
-- `@centralnicgroup-opensource/rtldev-middleware-semantic-release-plugins/replace` is a focused prepare hook for file replacements.
+- `rtldev-middleware-semantic-release-plugins/notes-override` uses the base class and shared validators.
+- `rtldev-middleware-semantic-release-plugins/notify` uses the base class, shared validators, and optional `success` hook handling.
+- `rtldev-middleware-semantic-release-plugins/maven` uses the base class and `afterVerify` for the Maven executable check.
+- `rtldev-middleware-semantic-release-plugins/replace` is a focused prepare hook for file replacements.
 
 ## Recommended Next Refactors
 
