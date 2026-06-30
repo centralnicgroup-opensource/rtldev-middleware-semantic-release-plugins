@@ -1,4 +1,4 @@
-import execa from "execa";
+import { execa } from "execa";
 
 export function exec(file, options) {
   const childProcess = execa(file, options);
