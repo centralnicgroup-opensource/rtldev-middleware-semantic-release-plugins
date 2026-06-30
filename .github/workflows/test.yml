@@ -40,6 +40,11 @@ jobs:
 
       - name: Test package
         run: pnpm run test:coverage
+        env:
+          RTLDEV_MW_CI_USER_CNR: ${{ secrets.RTLDEV_MW_CI_USER_CNR }}
+          RTLDEV_MW_CI_USERPASSWORD_CNR: ${{ secrets.RTLDEV_MW_CI_USERPASSWORD_CNR }}
+          RTLDEV_MW_CI_ROLE_CNR: ${{ secrets.RTLDEV_MW_CI_ROLE_CNR }}
+          RTLDEV_MW_CI_ROLEPASSWORD_CNR: ${{ secrets.RTLDEV_MW_CI_ROLEPASSWORD_CNR }}
 
       - name: Teams notification integration test
         env:
