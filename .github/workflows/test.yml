@@ -9,47 +9,5 @@ on:
 
 jobs:
   tests:
-    name: Test package
-    runs-on: ${{ vars.RTLDEV_MW_CI_OS || 'ubuntu-latest' }}
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup NodeJS ${{ vars.RTLDEV_MW_CI_NODE_VERSION || '24' }}
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ vars.RTLDEV_MW_CI_NODE_VERSION || '24' }}
-          check-latest: true
-
-      - name: Enable pnpm via Corepack
-        run: corepack enable
-
-      - name: Configure pnpm cache
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ vars.RTLDEV_MW_CI_NODE_VERSION || '24' }}
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Build package
-        run: pnpm run build
-
-      - name: Test package
-        run: pnpm run test:coverage
-        env:
-          RTLDEV_MW_CI_USER_CNR: ${{ secrets.RTLDEV_MW_CI_USER_CNR }}
-          RTLDEV_MW_CI_USERPASSWORD_CNR: ${{ secrets.RTLDEV_MW_CI_USERPASSWORD_CNR }}
-          RTLDEV_MW_CI_ROLE_CNR: ${{ secrets.RTLDEV_MW_CI_ROLE_CNR }}
-          RTLDEV_MW_CI_ROLEPASSWORD_CNR: ${{ secrets.RTLDEV_MW_CI_ROLEPASSWORD_CNR }}
-
-      - name: Teams notification integration test
-        env:
-          TEAMS_NOTIFICATION_URI: ${{ secrets.TEAMS_NOTIFICATION_URI }}
-        run: pnpm run test:teams
-
-      - name: Lint package
-        run: pnpm run lint
+    uses: centralnicgroup-opensource/rtldev-middleware-shareable-workflows/.github/workflows/semantic-release-plugins-test.yml@main
+    secrets: inherit
