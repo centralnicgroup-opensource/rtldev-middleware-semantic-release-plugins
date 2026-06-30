@@ -1,0 +1,21 @@
+#!/bin/sh
+
+set -eu
+
+staged_files="$(mktemp)"
+trap 'rm -f "$staged_files"' EXIT
+
+git diff --cached --name-only -z --diff-filter=ACMR -- \
+  '*.js' \
+  '*.json' \
+  '*.md' \
+  '*.yml' \
+  '*.yaml' \
+  > "$staged_files"
+
+if [ -s "$staged_files" ]; then
+  xargs -0 pnpm exec prettier --write -- < "$staged_files"
+  xargs -0 git add -- < "$staged_files"
+fi
+
+pnpm run lint
