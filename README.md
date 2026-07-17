@@ -5,7 +5,7 @@
 [![license](https://img.shields.io/npm/l/@team-internet/semantic-release-plugins.svg)](LICENSE)
 [![node](https://img.shields.io/node/v/@team-internet/semantic-release-plugins.svg)](package.json)
 
-A collection of reusable [semantic-release](https://github.com/semantic-release/semantic-release) plugins for common release pipeline tasks: updating files with the next version, sending Microsoft Teams notifications, overriding release notes, and publishing Maven projects.
+A collection of reusable [semantic-release](https://github.com/semantic-release/semantic-release) plugins for common release pipeline tasks: updating files with the next version, sending Microsoft Teams notifications, overriding release notes, publishing Maven projects, and building/publishing WHMCS module bundles.
 
 ---
 
@@ -20,6 +20,7 @@ A collection of reusable [semantic-release](https://github.com/semantic-release/
   - [notify / teams-notify](#notify--teams-notify)
   - [notes-override](#notes-override)
   - [maven](#maven)
+  - [whmcs-build](#whmcs-build)
 - [Debugging](#debugging)
 
 ---
@@ -55,6 +56,7 @@ yarn add --dev @team-internet/semantic-release-plugins
 | `teams-notify`   | `@team-internet/semantic-release-plugins/teams-notify`   | `verifyConditions`, `success`                       |
 | `notes-override` | `@team-internet/semantic-release-plugins/notes-override` | `verifyConditions`, `generateNotes`                 |
 | `maven`          | `@team-internet/semantic-release-plugins/maven`          | `verifyConditions`, `prepare`, `publish`, `success` |
+| `whmcs-build`    | `@team-internet/semantic-release-plugins/whmcs-build`    | `verifyConditions`, `prepare`, `publish`            |
 
 `teams-notify` is an alias for `notify`.
 
@@ -250,6 +252,75 @@ Releases Maven projects from a semantic-release pipeline. The plugin:
   }
 ]
 ```
+
+### `whmcs-build`
+
+Builds and publishes WHMCS module bundles. Aimed at WHMCS module authors who ship an [IonCube](https://www.ioncube.com/)-encoded release archive to a downstream distribution repository — this consolidates that pipeline into semantic-release lifecycle hooks instead of a standalone task runner:
+
+- **`verifyConditions`** — validates the configuration, checks the IonCube encoder exists (when encryption is enabled), the distribution-repository token is set (when publishing is enabled), and optional dependencies are installed.
+- **`prepare`** — stamps the release version onto the module logo (optional), runs `composer update --no-dev`, cleans and rebuilds the build directory from the configured file globs (stripping `.public` from file names), formats the build output with Prettier, encrypts the configured PHP files with IonCube inside a managed license window (activation, deactivation, and signal cleanup so licenses never leak), verifies every protected file carries an IonCube header, and zips the build directory into `<archiveFileName>-latest.zip`.
+- **`publish`** — clones or refreshes a downstream distribution repository, copies the configured artifacts (renaming `<archiveFileName>-latest` to `<archiveFileName>`), commits and pushes, and optionally runs a nested semantic-release inside that repository. This is useful for shipping a built/encoded bundle from a private source repository into a separate public or internal distribution repository.
+
+```json
+[
+  "@team-internet/semantic-release-plugins/whmcs-build",
+  {
+    "archiveFileName": "my-whmcs-module",
+    "filesForArchive": [
+      "LICENSE",
+      "@(README.public|HISTORY).md",
+      "@(modules|resources|includes|templates)/**",
+      "!modules/registrars/@(tppwregistrar|ibs|moniker)/**"
+    ],
+    "composer": { "script": "./composer.sh" },
+    "logoStamp": {
+      "input": "modules/registrars/example/raw_logo.png",
+      "output": "modules/registrars/example/logo.png"
+    },
+    "prettier": { "files": ["build/**/*.@(js|json|css)"] },
+    "encrypt": {
+      "encoderPath": "/opt/ioncube/ioncube_encoder.sh",
+      "commands": [
+        "-81 --bundle --add-comments COPYRIGHTS",
+        "-82 --add-to-bundle --keep-comments"
+      ],
+      "files": ["modules/**/*.php", "!modules/**/lang/**/*.php"]
+    },
+    "distributionRepo": {
+      "url": "https://github.com/acme/my-whmcs-module-dist.git",
+      "files": ["my-whmcs-module-latest.zip", "build/HISTORY.md"]
+    }
+  }
+]
+```
+
+| Option                   | Default  | Description                                                                                           |
+| ------------------------ | -------- | ----------------------------------------------------------------------------------------------------- |
+| `archiveFileName`        | required | Base name for the release archive (`<archiveFileName>-latest.zip`).                                   |
+| `archiveBuildPath`       | `build`  | Directory the bundle is assembled in.                                                                 |
+| `filesForArchive`        | `[]`     | Globs copied into the build directory. `!` prefix negates; `.public` is stripped from file names.     |
+| `filesForArchiveMapping` | `{}`     | Map of source glob → list of destination directories inside the build directory.                      |
+| `composer`               | `false`  | `{ script, module }` — optional pre-build script, then `composer validate` + `update --no-dev`.       |
+| `logoStamp`              | `false`  | `{ input, output, fontSize, color, padding }` — stamp `v<version>` onto a logo (needs `skia-canvas`). |
+| `prettier`               | `false`  | `{ files }` — format the matched build output (needs `prettier`).                                     |
+| `encrypt`                | `false`  | `{ encoderPath, commands, files, sudo }` — IonCube encryption of the matched files.                   |
+| `archive`                | `true`   | Zip the build directory after all prepare steps.                                                      |
+| `distributionRepo`       | `false`  | `{ url, dir, branch, files, releaserc, tokenEnv, runSemanticRelease, commitMessage }` — see below.    |
+
+**`distributionRepo` fields:**
+
+| Field                | Default                        | Description                                                                                                                                    |
+| -------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`                | required                       | Git URL of the downstream repository to publish to.                                                                                            |
+| `dir`                | `distribution-repo`            | Local directory the repository is cloned into.                                                                                                 |
+| `branch`             | `main`                         | Branch to check out, commit to, and push.                                                                                                      |
+| `files`              | `[]`                           | Globs of build artifacts to copy into the distribution repository.                                                                             |
+| `releaserc`          | `.releaserc.distribution.json` | semantic-release config copied into the distribution repository as `.releaserc.json`.                                                          |
+| `tokenEnv`           | `DISTRIBUTION_REPO_TOKEN`      | Environment variable holding a GitHub token with push access to the distribution repository.                                                   |
+| `runSemanticRelease` | `true`                         | Run a nested semantic-release inside the distribution repository after pushing.                                                                |
+| `commitMessage`      | `false`                        | Custom commit message template (`${version}`, `${type}`, `${notes}`); defaults to a conventional-commit message derived from the release type. |
+
+The building blocks (`BundleBuilder`, `IonCubeEncoder`, `DistributionRepoPublisher`) are exported from the subpath for standalone scripts, e.g. wrapper module bundles published without a version bump.
 
 ---
 
