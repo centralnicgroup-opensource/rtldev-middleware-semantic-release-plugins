@@ -74,6 +74,7 @@ This removes repeated lifecycle boilerplate from every plugin:
 - `@team-internet/semantic-release-plugins/notify` uses the base class, shared validators, and optional `success` hook handling.
 - `@team-internet/semantic-release-plugins/maven` uses the base class and `afterVerify` for the Maven executable check.
 - `@team-internet/semantic-release-plugins/replace` is a focused prepare hook for file replacements.
+- `@team-internet/semantic-release-plugins/whmcs-build` uses the base class with `afterVerify` for encoder/token checks and delegates to small collaborator classes (`BundleBuilder`, `IonCubeEncoder`, `DistributionRepoPublisher`).
 
 ## Recommended Next Refactors
 

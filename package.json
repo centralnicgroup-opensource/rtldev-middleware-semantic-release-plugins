@@ -11,7 +11,8 @@
     "./notes-override": "./src/plugins/notes-override/index.js",
     "./notify": "./src/plugins/notify/index.js",
     "./replace": "./src/plugins/replace/index.js",
-    "./teams-notify": "./src/plugins/notify/index.js"
+    "./teams-notify": "./src/plugins/notify/index.js",
+    "./whmcs-build": "./src/plugins/whmcs-build/index.js"
   },
   "files": [
     "src",
@@ -43,10 +44,27 @@
   },
   "dependencies": {
     "@semantic-release/error": "^4.0.0",
+    "archiver": "^8.0.0",
     "execa": "^9.6.1",
     "glob": "^13.0.6",
     "micromatch": "^4.0.8",
     "replace-in-file": "^8.4.0"
+  },
+  "peerDependencies": {
+    "prettier": ">=3",
+    "semantic-release": ">=24",
+    "skia-canvas": ">=1"
+  },
+  "peerDependenciesMeta": {
+    "prettier": {
+      "optional": true
+    },
+    "semantic-release": {
+      "optional": true
+    },
+    "skia-canvas": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
