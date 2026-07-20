@@ -320,7 +320,11 @@ Builds and publishes WHMCS module bundles. Aimed at WHMCS module authors who shi
 | `runSemanticRelease` | `true`                         | Run a nested semantic-release inside the distribution repository after pushing.                                                                |
 | `commitMessage`      | `false`                        | Custom commit message template (`${version}`, `${type}`, `${notes}`); defaults to a conventional-commit message derived from the release type. |
 
-The building blocks (`BundleBuilder`, `IonCubeEncoder`, `DistributionRepoPublisher`) are exported from the subpath for standalone scripts, e.g. wrapper module bundles published without a version bump.
+The building blocks (`BundleBuilder`, `IonCubeEncoder`, `DistributionRepoPublisher`) are exported from the subpath for standalone scripts, e.g. module bundles published without a semantic-release version bump. Three additional exports support that use case:
+
+- **`WhmcsBuildPlugin.release(pluginConfig, options)`** — runs `prepare` then `publish` in one call, building the context from plain options (`version`, `type`, `notes`, `repositoryUrl`, `cwd`, `env`, `logger`) instead of a real semantic-release invocation. Use this for releases triggered manually with an explicit version rather than derived from commit history.
+- **`createStandaloneContext(options)`** — the same context-building `WhmcsBuildPlugin.release` uses internally, exported separately for callers that only need `prepare` or only need `publish`.
+- **`resolveFiles(patterns, { cwd })`** and **`cleanupPaths(paths, { cwd, logger })`** — the glob-resolving and directory-removal helpers the plugin uses internally, exported for consumers that want the same file-handling behavior in their own scripts.
 
 ---
 

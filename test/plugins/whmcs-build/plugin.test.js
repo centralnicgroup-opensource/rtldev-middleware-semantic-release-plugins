@@ -4,7 +4,9 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, test } from "node:test";
-import WhmcsBuildPlugin from "../../../src/plugins/whmcs-build/plugin.js";
+import WhmcsBuildPlugin, {
+  createStandaloneContext,
+} from "../../../src/plugins/whmcs-build/plugin.js";
 
 const logger = { log() {}, error() {} };
 
@@ -147,5 +149,73 @@ describe("whmcs-build plugin", () => {
         createContext({ cwd: fixtureDir }),
       );
     });
+  });
+
+  describe("release", () => {
+    test("runs prepare then publish for a standalone, manually-versioned release", async () => {
+      for (const [file, content] of [
+        ["LICENSE", "license"],
+        ["modules/registrars/cnic/cnic.php", "<?php echo 1;"],
+      ]) {
+        await mkdir(path.join(fixtureDir, path.dirname(file)), {
+          recursive: true,
+        });
+        await writeFile(path.join(fixtureDir, file), content);
+      }
+
+      const plugin = new WhmcsBuildPlugin();
+      await plugin.release(
+        {
+          archiveFileName: "whmcs-tpp-registrar",
+          filesForArchive: ["LICENSE", "modules/**"],
+        },
+        {
+          version: "1.2.3",
+          type: "minor",
+          notes: "notes",
+          cwd: fixtureDir,
+          env: {},
+          logger,
+        },
+      );
+
+      assert.ok(
+        existsSync(path.join(fixtureDir, "whmcs-tpp-registrar-latest.zip")),
+      );
+    });
+  });
+});
+
+describe("createStandaloneContext", () => {
+  test("builds a semantic-release-shaped context from plain options", () => {
+    const context = createStandaloneContext({
+      version: "1.0.0",
+      type: "patch",
+      notes: "fixed things",
+      repositoryUrl: "https://github.com/acme/example.git",
+      cwd: "/tmp/example",
+      env: { FOO: "bar" },
+      logger,
+    });
+
+    assert.deepEqual(context, {
+      cwd: "/tmp/example",
+      env: { FOO: "bar" },
+      logger,
+      options: { repositoryUrl: "https://github.com/acme/example.git" },
+      nextRelease: { version: "1.0.0", type: "patch", notes: "fixed things" },
+    });
+  });
+
+  test("defaults cwd/env/logger and empty notes when omitted", () => {
+    const context = createStandaloneContext({
+      version: "1.0.0",
+      type: "patch",
+    });
+
+    assert.equal(context.cwd, process.cwd());
+    assert.equal(context.env, process.env);
+    assert.equal(context.logger, console);
+    assert.equal(context.nextRelease.notes, "");
   });
 });

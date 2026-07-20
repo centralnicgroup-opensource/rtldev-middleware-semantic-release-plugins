@@ -14,6 +14,30 @@ import IonCubeEncoder from "./ioncube-encoder.js";
 import stampVersionOnLogo from "./logo-stamper.js";
 import resolveConfig from "./resolve-config.js";
 
+/**
+ * Builds the context object semantic-release normally passes to a plugin's
+ * lifecycle hooks. Standalone callers (anything driving WhmcsBuildPlugin
+ * outside of a real semantic-release run, e.g. a manually-versioned release)
+ * need this same shape - this is the one place that builds it.
+ */
+export function createStandaloneContext({
+  version,
+  type,
+  notes,
+  repositoryUrl,
+  cwd = process.cwd(),
+  env = process.env,
+  logger = console,
+} = {}) {
+  return {
+    cwd,
+    env,
+    logger,
+    options: { repositoryUrl },
+    nextRelease: { version, type, notes: notes || "" },
+  };
+}
+
 export default class WhmcsBuildPlugin extends SemanticReleasePlugin {
   constructor() {
     super({ namespace: "whmcs-build", getError });
@@ -125,5 +149,19 @@ export default class WhmcsBuildPlugin extends SemanticReleasePlugin {
 
     const publisher = new DistributionRepoPublisher(config, context);
     await publisher.publish(context.nextRelease);
+  }
+
+  /**
+   * Convenience for standalone callers: runs `prepare` then `publish` in one
+   * call, building the context from plain options instead of requiring a
+   * real semantic-release invocation. Useful for releases that are
+   * triggered manually with an explicit version rather than derived from
+   * commit history (e.g. a module that versions itself independently).
+   */
+  async release(pluginConfig, options = {}) {
+    const context = createStandaloneContext(options);
+    await this.prepare(pluginConfig, context);
+    await this.publish(pluginConfig, context);
+    return context;
   }
 }
