@@ -43,29 +43,33 @@ export default class DistributionRepoPublisher {
   }
 
   async cloneOrCheckout() {
-    if (existsSync(path.join(this.dir, ".git"))) {
-      const { stdout: status } = await this.git(["status", "--porcelain"]);
-      const { stdout: branch } = await this.git([
-        "symbolic-ref",
-        "--short",
-        "HEAD",
-      ]);
-
-      if (branch.trim() !== this.repo.branch) {
-        if (status.trim()) {
-          throw new Error(
-            `The distribution repository at ${this.dir} has local changes and is not on '${this.repo.branch}'.`,
-          );
-        }
-        await this.git(["checkout", this.repo.branch]);
-      }
+    if (!existsSync(path.join(this.dir, ".git"))) {
+      this.logger.log("Cloning distribution repository...");
+      await execa("git", ["clone", this.authenticatedUrl, this.dir], {
+        cwd: this.cwd,
+      });
       return;
     }
 
-    this.logger.log("Cloning distribution repository...");
-    await execa("git", ["clone", this.authenticatedUrl, this.dir], {
-      cwd: this.cwd,
-    });
+    const { stdout: status } = await this.git(["status", "--porcelain"]);
+    if (status.trim()) {
+      throw new Error(
+        `The distribution repository at ${this.dir} has local changes; refusing to switch it to '${this.repo.branch}'.`,
+      );
+    }
+
+    // A prior step (e.g. actions/checkout) may have already fetched this
+    // repository, typically onto a detached HEAD rather than a real branch.
+    // Fetch the target branch explicitly and force-create a local branch
+    // tracking it, which is safe whether we start detached, on the right
+    // branch already, or on some other branch entirely.
+    await this.git(["fetch", "origin", this.repo.branch]);
+    await this.git([
+      "checkout",
+      "-B",
+      this.repo.branch,
+      `origin/${this.repo.branch}`,
+    ]);
   }
 
   async copyReleaseConfig() {
