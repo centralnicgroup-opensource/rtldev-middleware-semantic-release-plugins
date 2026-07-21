@@ -38,10 +38,11 @@ export default class BundleBuilder {
           cwd: this.cwd,
         });
       } catch (error) {
-        // The legacy composer.sh exits non-zero on partial installs; composer
-        // validate/update below is the actual gate.
+        // The script is an optional pre-step (e.g. swapping in a variant
+        // composer file); a non-zero exit is not fatal because the
+        // `composer validate` + `update` below are the actual gate.
         this.logger.log(
-          `Composer script failed, continuing: ${error.shortMessage || error.message}`,
+          `Optional composer script exited non-zero; continuing with composer validate/update: ${error.shortMessage || error.message}`,
         );
       }
     }
