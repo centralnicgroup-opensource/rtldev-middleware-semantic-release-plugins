@@ -1,6 +1,6 @@
 import { execSync } from "node:child_process";
-import { closeSync, openSync, readSync } from "node:fs";
-import { existsSync } from "node:fs";
+import { closeSync, existsSync, openSync, readSync } from "node:fs";
+import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { execa } from "execa";
 
@@ -123,6 +123,11 @@ export default class IonCubeEncoder {
 
   async encryptFiles(files, { cwd, outputDir }) {
     for (const file of files) {
+      // IonCube writes to `${outputDir}/${file}` but won't create parent
+      // directories, so ensure the target subdirectory exists first.
+      await mkdir(path.join(cwd, outputDir, path.dirname(file)), {
+        recursive: true,
+      });
       for (const command of this.commands) {
         try {
           await execa(

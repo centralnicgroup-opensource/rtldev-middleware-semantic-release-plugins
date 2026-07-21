@@ -17,7 +17,8 @@ for arg in "$@"; do
   if [ "$prev" = "-o" ]; then out="$arg"; fi
   prev="$arg"
 done
-mkdir -p "$(dirname "$out")"
+# No mkdir here on purpose: the real ioncube encoder does not create parent
+# directories, so encryptFiles() must - this stub stays faithful to that.
 printf '<?php //ICB1\\nencoded' > "$out"
 `;
 
