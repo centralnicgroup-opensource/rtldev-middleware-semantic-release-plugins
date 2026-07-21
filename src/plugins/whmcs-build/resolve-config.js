@@ -47,7 +47,12 @@ function normalizeDistributionRepo(distributionRepo) {
     url: distributionRepo.url || false,
     dir: distributionRepo.dir || "distribution-repo",
     branch: distributionRepo.branch || "main",
-    files: distributionRepo.files || [],
+    // Each entry is either a glob string (copied as-is) or a { from, to }
+    // pair that renames the matched file. Normalize both to { from, to },
+    // with to = null meaning "keep the source name".
+    files: (distributionRepo.files || []).map((entry) =>
+      typeof entry === "string" ? { from: entry, to: null } : entry,
+    ),
     releaserc: distributionRepo.releaserc || ".releaserc.distribution.json",
     tokenEnv: distributionRepo.tokenEnv || "DISTRIBUTION_REPO_TOKEN",
     runSemanticRelease: distributionRepo.runSemanticRelease !== false,

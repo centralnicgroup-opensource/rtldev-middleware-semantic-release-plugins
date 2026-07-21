@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -97,5 +98,48 @@ describe("whmcs-build DistributionRepoPublisher", () => {
 
     const publisher = createPublisher();
     await assert.rejects(publisher.cloneOrCheckout(), /local changes/);
+  });
+
+  describe("copyArtifacts", () => {
+    async function copyWith(files) {
+      for (const name of [
+        "whmcs-cnic-bundle-latest.zip",
+        "whmcs-ibs-registrar-latest.zip",
+      ]) {
+        await writeFile(path.join(workDir, name), "zip");
+      }
+      await mkdir(path.join(workDir, "build"), { recursive: true });
+      await writeFile(path.join(workDir, "build/HISTORY.md"), "history");
+
+      const env = { DISTRIBUTION_REPO_TOKEN: "unused" };
+      const config = resolveConfig(
+        {
+          archiveFileName: "whmcs-cnic-bundle",
+          distributionRepo: { url: remoteUrl, dir: "checkout", files },
+        },
+        { cwd: workDir, env },
+      );
+      const publisher = new DistributionRepoPublisher(config, { logger, env });
+      await publisher.cloneOrCheckout();
+      await publisher.copyArtifacts();
+      return publisher.dir;
+    }
+
+    test("renames a { from, to } entry, drops the build/ prefix, and keeps bare names", async () => {
+      const dir = await copyWith([
+        { from: "whmcs-cnic-bundle-latest.zip", to: "whmcs-cnic-bundle.zip" },
+        "whmcs-ibs-registrar-latest.zip",
+        "build/HISTORY.md",
+      ]);
+
+      // { from, to }: renamed (‑latest dropped).
+      assert.ok(existsSync(path.join(dir, "whmcs-cnic-bundle.zip")));
+      assert.ok(!existsSync(path.join(dir, "whmcs-cnic-bundle-latest.zip")));
+      // bare string: name kept verbatim, including ‑latest (matches old gulp).
+      assert.ok(existsSync(path.join(dir, "whmcs-ibs-registrar-latest.zip")));
+      // build/ prefix stripped so it lands at the repo root.
+      assert.ok(existsSync(path.join(dir, "HISTORY.md")));
+      assert.ok(!existsSync(path.join(dir, "build/HISTORY.md")));
+    });
   });
 });

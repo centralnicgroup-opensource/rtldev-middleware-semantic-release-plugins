@@ -79,30 +79,29 @@ export default class DistributionRepoPublisher {
     }
   }
 
-  targetPathFor(file) {
-    let target = file;
-
+  stripBuildPrefix(file) {
     const buildPrefix = `${this.config.archiveBuildPath}/`;
-    if (target.startsWith(buildPrefix)) {
-      target = target.slice(buildPrefix.length);
-    }
-
-    return target.replace(
-      `${this.config.archiveFileName}-latest`,
-      this.config.archiveFileName,
-    );
+    return file.startsWith(buildPrefix) ? file.slice(buildPrefix.length) : file;
   }
 
   async copyArtifacts() {
-    const files = await resolveFiles(this.repo.files, { cwd: this.cwd });
+    let copied = 0;
 
-    for (const file of files) {
-      const target = path.join(this.dir, this.targetPathFor(file));
-      await mkdir(path.dirname(target), { recursive: true });
-      await copyFile(path.resolve(this.cwd, file), target);
+    for (const { from, to } of this.repo.files) {
+      const matches = await resolveFiles([from], { cwd: this.cwd });
+      for (const file of matches) {
+        // An explicit `to` renames the file (e.g. dropping the "-latest"
+        // suffix for the public cnic bundle); bare entries keep their name.
+        // Either way the build/ prefix is stripped so files land at the repo
+        // root. `to` is meant for single-file entries, not multi-match globs.
+        const target = path.join(this.dir, this.stripBuildPrefix(to ?? file));
+        await mkdir(path.dirname(target), { recursive: true });
+        await copyFile(path.resolve(this.cwd, file), target);
+        copied += 1;
+      }
     }
 
-    this.logger.log(`Copied ${files.length} artifact(s) to ${this.dir}.`);
+    this.logger.log(`Copied ${copied} artifact(s) to ${this.dir}.`);
   }
 
   commitMessage(nextRelease = {}) {
