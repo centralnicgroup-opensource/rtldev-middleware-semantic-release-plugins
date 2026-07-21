@@ -95,10 +95,14 @@ export default class WhmcsBuildPlugin extends SemanticReleasePlugin {
     const builder = new BundleBuilder(config, logger);
 
     if (config.logoStamp) {
-      await stampVersionOnLogo(config.logoStamp, nextRelease.version, {
-        cwd: config.cwd,
-        logger,
-      });
+      if (nextRelease?.version) {
+        await stampVersionOnLogo(config.logoStamp, nextRelease.version, {
+          cwd: config.cwd,
+          logger,
+        });
+      } else {
+        logger.log("Skipping logo stamp: no release version in context.");
+      }
     }
 
     await builder.composerUpdate();
