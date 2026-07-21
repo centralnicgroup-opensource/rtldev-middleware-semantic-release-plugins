@@ -1,4 +1,23 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { getContextEnv, isDebugEnabled } from "../../core/index.js";
+
+/**
+ * When `configFile` is set, load that JSON file (relative to cwd) as the
+ * base options and let any inline pluginConfig keys override it. This lets a
+ * static `.releaserc.json` share one config file with other consumers (e.g. a
+ * CLI) instead of duplicating every option inline.
+ */
+function applyConfigFile(pluginConfig, cwd) {
+  if (!pluginConfig.configFile) {
+    return pluginConfig;
+  }
+
+  const filePath = path.resolve(cwd, pluginConfig.configFile);
+  const fileConfig = JSON.parse(readFileSync(filePath, "utf8"));
+  const { configFile, ...inline } = pluginConfig;
+  return { ...fileConfig, ...inline };
+}
 
 function normalizeComposer(composer) {
   if (!composer) {
@@ -62,21 +81,21 @@ function normalizeDistributionRepo(distributionRepo) {
 
 export default (pluginConfig = {}, context) => {
   const env = getContextEnv(context);
+  const cwd = context?.cwd || process.cwd();
+  const config = applyConfigFile(pluginConfig, cwd);
 
   return {
-    cwd: context?.cwd || process.cwd(),
-    archiveFileName: pluginConfig.archiveFileName || false,
-    archiveBuildPath: pluginConfig.archiveBuildPath || "build",
-    filesForArchive: pluginConfig.filesForArchive || [],
-    filesForArchiveMapping: pluginConfig.filesForArchiveMapping || {},
-    composer: normalizeComposer(pluginConfig.composer),
-    logoStamp: normalizeLogoStamp(pluginConfig.logoStamp),
-    prettier: pluginConfig.prettier
-      ? { files: pluginConfig.prettier.files || [] }
-      : false,
-    encrypt: normalizeEncrypt(pluginConfig.encrypt),
-    archive: pluginConfig.archive !== false,
-    distributionRepo: normalizeDistributionRepo(pluginConfig.distributionRepo),
+    cwd,
+    archiveFileName: config.archiveFileName || false,
+    archiveBuildPath: config.archiveBuildPath || "build",
+    filesForArchive: config.filesForArchive || [],
+    filesForArchiveMapping: config.filesForArchiveMapping || {},
+    composer: normalizeComposer(config.composer),
+    logoStamp: normalizeLogoStamp(config.logoStamp),
+    prettier: config.prettier ? { files: config.prettier.files || [] } : false,
+    encrypt: normalizeEncrypt(config.encrypt),
+    archive: config.archive !== false,
+    distributionRepo: normalizeDistributionRepo(config.distributionRepo),
     debug: isDebugEnabled(env, "whmcs-build"),
   };
 };

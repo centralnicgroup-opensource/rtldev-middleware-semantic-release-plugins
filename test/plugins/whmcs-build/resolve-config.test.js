@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, test } from "node:test";
 import resolveConfig from "../../../src/plugins/whmcs-build/resolve-config.js";
 
 describe("whmcs-build resolve-config", () => {
@@ -79,5 +82,55 @@ describe("whmcs-build resolve-config", () => {
     );
 
     assert.equal(config.cwd, "/somewhere/else");
+  });
+
+  describe("configFile", () => {
+    let fixtureDir;
+
+    beforeEach(async () => {
+      fixtureDir = await mkdtemp(path.join(tmpdir(), "whmcs-build-cfgfile-"));
+      await writeFile(
+        path.join(fixtureDir, "release-config.json"),
+        JSON.stringify({
+          archiveFileName: "whmcs-cnic-bundle",
+          archiveBuildPath: "build",
+          filesForArchive: ["LICENSE"],
+          encrypt: {
+            encoderPath: "/enc",
+            commands: ["-81"],
+            files: ["**/*.php"],
+          },
+          // a key the plugin doesn't know about is ignored, not an error
+          bundle: { directories: {} },
+        }),
+      );
+    });
+
+    afterEach(async () => {
+      await rm(fixtureDir, { recursive: true, force: true });
+    });
+
+    test("loads options from the referenced JSON file", () => {
+      const config = resolveConfig(
+        { configFile: "release-config.json" },
+        { cwd: fixtureDir, env: {} },
+      );
+
+      assert.equal(config.archiveFileName, "whmcs-cnic-bundle");
+      assert.deepEqual(config.filesForArchive, ["LICENSE"]);
+      assert.equal(config.encrypt.encoderPath, "/enc");
+      assert.deepEqual(config.encrypt.files, ["**/*.php"]);
+    });
+
+    test("inline options override the config file", () => {
+      const config = resolveConfig(
+        { configFile: "release-config.json", archiveFileName: "override" },
+        { cwd: fixtureDir, env: {} },
+      );
+
+      assert.equal(config.archiveFileName, "override");
+      // non-overridden keys still come from the file
+      assert.deepEqual(config.filesForArchive, ["LICENSE"]);
+    });
   });
 });

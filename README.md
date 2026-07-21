@@ -294,18 +294,19 @@ Builds and publishes WHMCS module bundles. Aimed at WHMCS module authors who shi
 ]
 ```
 
-| Option                   | Default  | Description                                                                                           |
-| ------------------------ | -------- | ----------------------------------------------------------------------------------------------------- |
-| `archiveFileName`        | required | Base name for the release archive (`<archiveFileName>-latest.zip`).                                   |
-| `archiveBuildPath`       | `build`  | Directory the bundle is assembled in.                                                                 |
-| `filesForArchive`        | `[]`     | Globs copied into the build directory. `!` prefix negates; `.public` is stripped from file names.     |
-| `filesForArchiveMapping` | `{}`     | Map of source glob → list of destination directories inside the build directory.                      |
-| `composer`               | `false`  | `{ script, module }` — optional pre-build script, then `composer validate` + `update --no-dev`.       |
-| `logoStamp`              | `false`  | `{ input, output, fontSize, color, padding }` — stamp `v<version>` onto a logo (needs `skia-canvas`). |
-| `prettier`               | `false`  | `{ files }` — format the matched build output (needs `prettier`).                                     |
-| `encrypt`                | `false`  | `{ encoderPath, commands, files, sudo }` — IonCube encryption of the matched files.                   |
-| `archive`                | `true`   | Zip the build directory after all prepare steps.                                                      |
-| `distributionRepo`       | `false`  | `{ url, dir, branch, files, releaserc, tokenEnv, runSemanticRelease, commitMessage }` — see below.    |
+| Option                   | Default  | Description                                                                                                                                                                                                      |
+| ------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `configFile`             | unset    | Path (relative to `cwd`) to a JSON file to load these options from. Inline options override the file. Lets a static `.releaserc.json` share one config file with other consumers instead of duplicating options. |
+| `archiveFileName`        | required | Base name for the release archive (`<archiveFileName>-latest.zip`).                                                                                                                                              |
+| `archiveBuildPath`       | `build`  | Directory the bundle is assembled in.                                                                                                                                                                            |
+| `filesForArchive`        | `[]`     | Globs copied into the build directory. `!` prefix negates; `.public` is stripped from file names.                                                                                                                |
+| `filesForArchiveMapping` | `{}`     | Map of source glob → list of destination directories inside the build directory.                                                                                                                                 |
+| `composer`               | `false`  | `{ script, module }` — optional pre-build script, then `composer validate` + `update --no-dev`.                                                                                                                  |
+| `logoStamp`              | `false`  | `{ input, output, fontSize, color, padding }` — stamp `v<version>` onto a logo (needs `skia-canvas`).                                                                                                            |
+| `prettier`               | `false`  | `{ files }` — format the matched build output (needs `prettier`).                                                                                                                                                |
+| `encrypt`                | `false`  | `{ encoderPath, commands, files, sudo }` — IonCube encryption of the matched files.                                                                                                                              |
+| `archive`                | `true`   | Zip the build directory after all prepare steps.                                                                                                                                                                 |
+| `distributionRepo`       | `false`  | `{ url, dir, branch, files, releaserc, tokenEnv, runSemanticRelease, commitMessage }` — see below.                                                                                                               |
 
 **`distributionRepo` fields:**
 
