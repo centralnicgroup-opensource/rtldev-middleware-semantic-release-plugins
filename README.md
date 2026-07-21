@@ -322,8 +322,9 @@ Builds and publishes WHMCS module bundles. Aimed at WHMCS module authors who shi
 
 The building blocks (`BundleBuilder`, `IonCubeEncoder`, `DistributionRepoPublisher`) are exported from the subpath for standalone scripts, e.g. module bundles published without a semantic-release version bump. Three additional exports support that use case:
 
-- **`WhmcsBuildPlugin.release(pluginConfig, options)`** — runs `prepare` then `publish` in one call, building the context from plain options (`version`, `type`, `notes`, `repositoryUrl`, `cwd`, `env`, `logger`) instead of a real semantic-release invocation. Use this for releases triggered manually with an explicit version rather than derived from commit history.
-- **`createStandaloneContext(options)`** — the same context-building `WhmcsBuildPlugin.release` uses internally, exported separately for callers that only need `prepare` or only need `publish`.
+- **`WhmcsBuildPlugin.build(pluginConfig, options)`** — builds the bundle only (no publish), constructing the context from plain options (`version`, `type`, `notes`, `repositoryUrl`, `cwd`, `env`, `logger`) so callers never build a context themselves.
+- **`WhmcsBuildPlugin.release(pluginConfig, options)`** — `build` then `publish` in one call, taking the same options. Use this for releases triggered manually with an explicit version rather than derived from commit history.
+- **`createStandaloneContext(options)`** — the context builder `build`/`release` use internally, exported for callers that need to drive `prepare`/`publish` directly.
 - **`resolveFiles(patterns, { cwd })`** and **`cleanupPaths(paths, { cwd, logger })`** — the glob-resolving and directory-removal helpers the plugin uses internally, exported for consumers that want the same file-handling behavior in their own scripts.
 
 ---

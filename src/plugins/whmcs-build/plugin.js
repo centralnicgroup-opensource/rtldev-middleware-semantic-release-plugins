@@ -152,15 +152,25 @@ export default class WhmcsBuildPlugin extends SemanticReleasePlugin {
   }
 
   /**
-   * Convenience for standalone callers: runs `prepare` then `publish` in one
-   * call, building the context from plain options instead of requiring a
-   * real semantic-release invocation. Useful for releases that are
-   * triggered manually with an explicit version rather than derived from
-   * commit history (e.g. a module that versions itself independently).
+   * Convenience for standalone callers that only want to build the bundle,
+   * no publish: builds the context from plain options so callers never
+   * construct one themselves. The build-only counterpart to `release()`.
    */
-  async release(pluginConfig, options = {}) {
+  async build(pluginConfig, options = {}) {
     const context = createStandaloneContext(options);
     await this.prepare(pluginConfig, context);
+    return context;
+  }
+
+  /**
+   * Convenience for standalone callers: builds then publishes in one call,
+   * from plain options instead of a real semantic-release invocation.
+   * Useful for releases triggered manually with an explicit version rather
+   * than derived from commit history (e.g. a module that versions itself
+   * independently).
+   */
+  async release(pluginConfig, options = {}) {
+    const context = await this.build(pluginConfig, options);
     await this.publish(pluginConfig, context);
     return context;
   }

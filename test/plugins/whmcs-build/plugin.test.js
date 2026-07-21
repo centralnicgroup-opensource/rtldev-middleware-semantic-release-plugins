@@ -151,6 +151,25 @@ describe("whmcs-build plugin", () => {
     });
   });
 
+  describe("build", () => {
+    test("builds the bundle from plain options, no context object required", async () => {
+      await mkdir(path.join(fixtureDir, "modules/registrars/cnic"), {
+        recursive: true,
+      });
+      await writeFile(path.join(fixtureDir, "LICENSE"), "license");
+
+      const plugin = new WhmcsBuildPlugin();
+      await plugin.build(
+        { archiveFileName: "whmcs-cnic-bundle", filesForArchive: ["LICENSE"] },
+        { cwd: fixtureDir, logger },
+      );
+
+      assert.ok(
+        existsSync(path.join(fixtureDir, "whmcs-cnic-bundle-latest.zip")),
+      );
+    });
+  });
+
   describe("release", () => {
     test("runs prepare then publish for a standalone, manually-versioned release", async () => {
       for (const [file, content] of [
