@@ -144,6 +144,13 @@ export default class IonCubeEncoder {
     }
   }
 
+  async encryptAndVerify(files, options) {
+    await this.withLicense(async () => {
+      await this.encryptFiles(files, options);
+      await this.verifyEncrypted(files, options);
+    });
+  }
+
   hasEncodedHeader(filePath) {
     const fileDescriptor = openSync(filePath, "r");
     try {

@@ -50,15 +50,9 @@ describe("whmcs-build IonCubeEncoder", () => {
     const encoder = createEncoder();
     const files = ["modules/cnic.php"];
 
-    await encoder.withLicense(async () => {
-      await encoder.encryptFiles(files, {
-        cwd: fixtureDir,
-        outputDir: "build",
-      });
-      await encoder.verifyEncrypted(files, {
-        cwd: fixtureDir,
-        outputDir: "build",
-      });
+    await encoder.encryptAndVerify(files, {
+      cwd: fixtureDir,
+      outputDir: "build",
     });
 
     assert.equal(encoder.active, false);

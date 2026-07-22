@@ -68,6 +68,12 @@ describe("whmcs-build DistributionRepoPublisher", () => {
       "HEAD",
     ]);
     assert.equal(branch.trim(), "main");
+    const { stdout: origin } = await git(publisher.dir, [
+      "remote",
+      "get-url",
+      "origin",
+    ]);
+    assert.equal(origin, remoteUrl);
   });
 
   test("recovers a checkout left in detached HEAD by a prior step", async () => {
@@ -98,6 +104,49 @@ describe("whmcs-build DistributionRepoPublisher", () => {
 
     const publisher = createPublisher();
     await assert.rejects(publisher.cloneOrCheckout(), /local changes/);
+  });
+
+  test("requires the downstream release config when semantic-release is enabled", async () => {
+    const publisher = createPublisher();
+    await publisher.cloneOrCheckout();
+    await assert.rejects(
+      publisher.copyReleaseConfig(),
+      /release config was not found/,
+    );
+  });
+
+  test("restores the clean remote URL after pushing", async () => {
+    const publisher = createPublisher();
+    await publisher.cloneOrCheckout();
+    await git(publisher.dir, ["config", "user.email", "test@example.com"]);
+    await git(publisher.dir, ["config", "user.name", "Test"]);
+    await writeFile(path.join(publisher.dir, "release.txt"), "release");
+    Object.defineProperty(publisher, "authenticatedUrl", {
+      value: `file://${remoteUrl}`,
+    });
+
+    assert.equal(await publisher.commitAndPush("fix: release"), true);
+    const { stdout: origin } = await git(publisher.dir, [
+      "remote",
+      "get-url",
+      "origin",
+    ]);
+    assert.equal(origin, remoteUrl);
+  });
+
+  test("skips downstream semantic-release when no artifacts changed", async () => {
+    const publisher = createPublisher();
+    let released = false;
+    publisher.cloneOrCheckout = async () => {};
+    publisher.copyReleaseConfig = async () => {};
+    publisher.copyArtifacts = async () => {};
+    publisher.commitAndPush = async () => false;
+    publisher.releaseDistributionRepo = async () => {
+      released = true;
+    };
+
+    await publisher.publish({ version: "1.0.0", type: "patch" });
+    assert.equal(released, false);
   });
 
   describe("copyArtifacts", () => {
@@ -140,6 +189,13 @@ describe("whmcs-build DistributionRepoPublisher", () => {
       // build/ prefix stripped so it lands at the repo root.
       assert.ok(existsSync(path.join(dir, "HISTORY.md")));
       assert.ok(!existsSync(path.join(dir, "build/HISTORY.md")));
+    });
+
+    test("rejects a missing required artifact", async () => {
+      await assert.rejects(
+        copyWith(["missing.zip"]),
+        /Required distribution artifact pattern matched no files/,
+      );
     });
   });
 });

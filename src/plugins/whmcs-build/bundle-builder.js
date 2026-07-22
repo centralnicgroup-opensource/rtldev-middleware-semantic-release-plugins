@@ -7,7 +7,7 @@ import { resolveFiles } from "./files.js";
 import getError from "./get-error.js";
 
 /**
- * Builds the release bundle: composer update, clean, copy the configured
+ * Builds the release bundle: Composer preparation, clean, copy the configured
  * files into the build directory, format the output, and zip it up.
  */
 export default class BundleBuilder {
@@ -25,32 +25,16 @@ export default class BundleBuilder {
     return this.resolve(`${this.config.archiveFileName}-latest.zip`);
   }
 
-  async composerUpdate() {
+  async runComposer() {
     const { composer } = this.config;
     if (!composer) {
       return;
     }
 
-    if (composer.script) {
-      try {
-        this.logger.log(`Running composer script ${composer.script}`);
-        await execa(composer.script, composer.module ? [composer.module] : [], {
-          cwd: this.cwd,
-        });
-      } catch (error) {
-        // The script is an optional pre-step (e.g. swapping in a variant
-        // composer file); a non-zero exit is not fatal because the
-        // `composer validate` + `update` below are the actual gate.
-        this.logger.log(
-          `Optional composer script exited non-zero; continuing with composer validate/update: ${error.shortMessage || error.message}`,
-        );
-      }
-    }
-
-    this.logger.log("Validating composer configuration");
-    await execa("composer", ["validate"], { cwd: this.cwd });
-    this.logger.log("Running composer update --no-dev");
-    await execa("composer", ["update", "--no-dev"], { cwd: this.cwd });
+    this.logger.log(`Running ${composer.script}`);
+    await execa(composer.script, composer.module ? [composer.module] : [], {
+      cwd: this.cwd,
+    });
   }
 
   async clean() {
@@ -74,6 +58,12 @@ export default class BundleBuilder {
       cwd: this.cwd,
     });
 
+    if (!files.length) {
+      throw new Error(
+        "No files matched `filesForArchive`; refusing to build an empty archive.",
+      );
+    }
+
     for (const file of files) {
       const basename = path.posix.basename(file).replace(".public", "");
       const dirname = path.posix.dirname(file);
@@ -90,6 +80,9 @@ export default class BundleBuilder {
       this.config.filesForArchiveMapping,
     )) {
       const files = await resolveFiles([source], { cwd: this.cwd });
+      if (!files.length) {
+        throw new Error(`Archive mapping source matched no files: ${source}`);
+      }
       for (const destination of destinations) {
         for (const file of files) {
           await this.copyInto(

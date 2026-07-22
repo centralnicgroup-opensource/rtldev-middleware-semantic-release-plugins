@@ -6,6 +6,14 @@ export function ArchiveFileNameRequired() {
   };
 }
 
+export function ComposerScriptRequired() {
+  return {
+    message: "The `composer.script` option is required.",
+    details:
+      "Composer preparation is enabled but no script is configured. Set `composer.script` to an executable build script, or disable Composer preparation with `composer: false`.",
+  };
+}
+
 export function EncoderPathRequired() {
   return {
     message: "The `encrypt.encoderPath` option is required.",

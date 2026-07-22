@@ -34,7 +34,7 @@ export default class DistributionRepoPublisher {
   get authenticatedUrl() {
     return this.repo.url.replace(
       "https://github.com/",
-      `https://${this.token}@github.com/`,
+      `https://${encodeURIComponent(this.token)}@github.com/`,
     );
   }
 
@@ -42,12 +42,35 @@ export default class DistributionRepoPublisher {
     return execa("git", args, { cwd: this.dir, ...options });
   }
 
+  async withAuthenticatedRemote(work) {
+    try {
+      try {
+        await this.git(["remote", "set-url", "origin", this.authenticatedUrl]);
+      } catch {
+        throw new Error("Failed to configure distribution authentication.");
+      }
+      return await work();
+    } finally {
+      await this.git(["remote", "set-url", "origin", this.repo.url]);
+    }
+  }
+
   async cloneOrCheckout() {
     if (!existsSync(path.join(this.dir, ".git"))) {
       this.logger.log("Cloning distribution repository...");
-      await execa("git", ["clone", this.authenticatedUrl, this.dir], {
-        cwd: this.cwd,
-      });
+      try {
+        await execa("git", ["clone", this.authenticatedUrl, this.dir], {
+          cwd: this.cwd,
+        });
+      } catch {
+        throw new Error(
+          `Failed to clone the distribution repository into ${this.dir}.`,
+        );
+      } finally {
+        if (existsSync(path.join(this.dir, ".git"))) {
+          await this.git(["remote", "set-url", "origin", this.repo.url]);
+        }
+      }
       return;
     }
 
@@ -63,7 +86,9 @@ export default class DistributionRepoPublisher {
     // Fetch the target branch explicitly and force-create a local branch
     // tracking it, which is safe whether we start detached, on the right
     // branch already, or on some other branch entirely.
-    await this.git(["fetch", "origin", this.repo.branch]);
+    await this.withAuthenticatedRemote(() =>
+      this.git(["fetch", "origin", this.repo.branch]),
+    );
     await this.git([
       "checkout",
       "-B",
@@ -74,9 +99,15 @@ export default class DistributionRepoPublisher {
 
   async copyReleaseConfig() {
     const source = path.resolve(this.cwd, this.repo.releaserc);
-    if (existsSync(source)) {
-      await copyFile(source, path.join(this.dir, ".releaserc.json"));
+    if (!existsSync(source)) {
+      if (this.repo.runSemanticRelease) {
+        throw new Error(
+          `Distribution release config was not found: ${this.repo.releaserc}`,
+        );
+      }
+      return;
     }
+    await copyFile(source, path.join(this.dir, ".releaserc.json"));
   }
 
   stripBuildPrefix(file) {
@@ -89,6 +120,11 @@ export default class DistributionRepoPublisher {
 
     for (const { from, to } of this.repo.files) {
       const matches = await resolveFiles([from], { cwd: this.cwd });
+      if (!matches.length) {
+        throw new Error(
+          `Required distribution artifact pattern matched no files: ${from}`,
+        );
+      }
       for (const file of matches) {
         // An explicit `to` renames the file (e.g. dropping the "-latest"
         // suffix for the public cnic bundle); bare entries keep their name.
@@ -117,8 +153,6 @@ export default class DistributionRepoPublisher {
   }
 
   async commitAndPush(message) {
-    await this.git(["remote", "set-url", "origin", this.authenticatedUrl]);
-
     const { stdout: status } = await this.git(["status", "--porcelain"]);
     if (!status.trim()) {
       this.logger.log("No changes to publish to the distribution repository.");
@@ -127,9 +161,12 @@ export default class DistributionRepoPublisher {
 
     await this.git(["add", "-A"]);
     await this.git(["commit", "-m", message]);
-    await this.git(["fetch", "origin", "-p", "--tags", "--prune-tags", "-f"]);
-    await this.git(["pull"]);
-    await this.git(["push"]);
+
+    await this.withAuthenticatedRemote(async () => {
+      // cloneOrCheckout() starts from the current remote branch. Push directly
+      // so a concurrent update fails safely instead of creating a merge commit.
+      await this.git(["push"]);
+    });
     this.logger.log("Pushed release artifacts to the distribution repository.");
     return true;
   }
@@ -172,7 +209,9 @@ export default class DistributionRepoPublisher {
     await this.cloneOrCheckout();
     await this.copyReleaseConfig();
     await this.copyArtifacts();
-    await this.commitAndPush(this.commitMessage(nextRelease));
-    await this.releaseDistributionRepo(nextRelease);
+    const pushed = await this.commitAndPush(this.commitMessage(nextRelease));
+    if (pushed) {
+      await this.releaseDistributionRepo(nextRelease);
+    }
   }
 }

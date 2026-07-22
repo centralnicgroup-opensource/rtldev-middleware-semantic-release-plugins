@@ -67,6 +67,14 @@ describe("whmcs-build plugin", () => {
       );
     });
 
+    test("fails when Composer preparation has no script", async () => {
+      await assertVerifyFailsWith(
+        { archiveFileName: "bundle", composer: {} },
+        createContext(),
+        "ComposerScriptRequired",
+      );
+    });
+
     test("fails when the configured encoder does not exist", async () => {
       await assertVerifyFailsWith(
         {
@@ -139,6 +147,29 @@ describe("whmcs-build plugin", () => {
         existsSync(path.join(fixtureDir, "whmcs-cnic-bundle-latest.zip")),
       );
     });
+
+    test("fails when encryption is enabled but matches no files", async () => {
+      const encoder = path.join(fixtureDir, "encoder.sh");
+      await writeFile(encoder, "#!/bin/sh\n");
+      await writeFile(path.join(fixtureDir, "LICENSE"), "license");
+      const plugin = new WhmcsBuildPlugin();
+      await assert.rejects(
+        plugin.prepare(
+          {
+            archiveFileName: "bundle",
+            filesForArchive: ["LICENSE"],
+            encrypt: {
+              encoderPath: encoder,
+              commands: ["-81"],
+              files: ["missing/**/*.php"],
+              sudo: false,
+            },
+          },
+          createContext({ cwd: fixtureDir }),
+        ),
+        /no files matched/,
+      );
+    });
   });
 
   describe("publish", () => {
@@ -166,6 +197,19 @@ describe("whmcs-build plugin", () => {
 
       assert.ok(
         existsSync(path.join(fixtureDir, "whmcs-cnic-bundle-latest.zip")),
+      );
+    });
+
+    test("does not require publishing credentials", async () => {
+      await writeFile(path.join(fixtureDir, "LICENSE"), "license");
+      const plugin = new WhmcsBuildPlugin();
+      await plugin.build(
+        {
+          archiveFileName: "bundle",
+          filesForArchive: ["LICENSE"],
+          distributionRepo: { url: "https://github.com/acme/public.git" },
+        },
+        { cwd: fixtureDir, env: {} },
       );
     });
   });

@@ -42,6 +42,14 @@ describe("whmcs-build resolve-config", () => {
     });
   });
 
+  test("normalizes a Composer script", () => {
+    assert.deepEqual(
+      resolveConfig({ composer: { script: "./composer.sh", module: "ibs" } })
+        .composer,
+      { script: "./composer.sh", module: "ibs" },
+    );
+  });
+
   test("normalizes distributionRepo options with defaults", () => {
     const config = resolveConfig({
       archiveFileName: "bundle",

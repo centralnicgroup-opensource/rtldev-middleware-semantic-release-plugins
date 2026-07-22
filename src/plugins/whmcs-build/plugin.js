@@ -51,6 +51,8 @@ export default class WhmcsBuildPlugin extends SemanticReleasePlugin {
     return runConfigValidators(config, [
       validateRequiredConfig("archiveFileName", "ArchiveFileNameRequired"),
       (cfg) =>
+        cfg.composer && !cfg.composer.script ? "ComposerScriptRequired" : null,
+      (cfg) =>
         cfg.encrypt && !cfg.encrypt.encoderPath ? "EncoderPathRequired" : null,
       (cfg) =>
         cfg.encrypt && !cfg.encrypt.commands.length
@@ -105,7 +107,7 @@ export default class WhmcsBuildPlugin extends SemanticReleasePlugin {
       }
     }
 
-    await builder.composerUpdate();
+    await builder.runComposer();
     await builder.clean();
     await builder.copyFiles();
     await builder.copyMappings();
@@ -124,20 +126,15 @@ export default class WhmcsBuildPlugin extends SemanticReleasePlugin {
     });
 
     if (!files.length) {
-      logger.log("Nothing to encrypt!");
-      return;
+      throw new Error(
+        "Encryption is enabled but no files matched `encrypt.files`.",
+      );
     }
 
     const encoder = new IonCubeEncoder(config.encrypt, logger);
-    await encoder.withLicense(async () => {
-      await encoder.encryptFiles(files, {
-        cwd: config.cwd,
-        outputDir: config.archiveBuildPath,
-      });
-      await encoder.verifyEncrypted(files, {
-        cwd: config.cwd,
-        outputDir: config.archiveBuildPath,
-      });
+    await encoder.encryptAndVerify(files, {
+      cwd: config.cwd,
+      outputDir: config.archiveBuildPath,
     });
   }
 
@@ -162,7 +159,7 @@ export default class WhmcsBuildPlugin extends SemanticReleasePlugin {
    */
   async build(pluginConfig, options = {}) {
     const context = createStandaloneContext(options);
-    await this.prepare(pluginConfig, context);
+    await this.prepare({ ...pluginConfig, distributionRepo: false }, context);
     return context;
   }
 
@@ -174,7 +171,8 @@ export default class WhmcsBuildPlugin extends SemanticReleasePlugin {
    * independently).
    */
   async release(pluginConfig, options = {}) {
-    const context = await this.build(pluginConfig, options);
+    const context = createStandaloneContext(options);
+    await this.prepare(pluginConfig, context);
     await this.publish(pluginConfig, context);
     return context;
   }

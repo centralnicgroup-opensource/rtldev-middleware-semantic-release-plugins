@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import {
+  chmod,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, test } from "node:test";
@@ -59,6 +66,22 @@ describe("whmcs-build BundleBuilder", () => {
     assert.ok(!existsSync(path.join(fixtureDir, "build/README.public.md")));
   });
 
+  test("copyFiles refuses to create an empty archive", async () => {
+    const builder = createBuilder({ filesForArchive: ["missing/**"] });
+    await assert.rejects(
+      builder.copyFiles(),
+      /refusing to build an empty archive/,
+    );
+  });
+
+  test("runComposer fails when the configured script fails", async () => {
+    const script = path.join(fixtureDir, "composer.sh");
+    await writeFile(script, "#!/bin/sh\nexit 2\n");
+    await chmod(script, 0o755);
+    const builder = createBuilder({ composer: { script } });
+    await assert.rejects(builder.runComposer());
+  });
+
   test("copyMappings copies sources into each destination", async () => {
     const builder = createBuilder();
     await builder.copyMappings();
@@ -67,6 +90,13 @@ describe("whmcs-build BundleBuilder", () => {
     assert.ok(
       existsSync(path.join(fixtureDir, "build/extra/.htaccess_sample")),
     );
+  });
+
+  test("copyMappings rejects a missing source", async () => {
+    const builder = createBuilder({
+      filesForArchiveMapping: { "missing/**": ["docs"] },
+    });
+    await assert.rejects(builder.copyMappings(), /source matched no files/);
   });
 
   test("clean removes the build directory and previous archive", async () => {
