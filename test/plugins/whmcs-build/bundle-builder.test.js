@@ -126,6 +126,17 @@ describe("whmcs-build BundleBuilder", () => {
     assert.equal(archive.subarray(0, 2).toString(), "PK");
   });
 
+  test("supports an archive without a suffix", async () => {
+    const builder = createBuilder({ archiveSuffix: "" });
+    await builder.copyFiles();
+    await builder.buildArchive();
+
+    assert.ok(existsSync(path.join(fixtureDir, "whmcs-cnic-bundle.zip")));
+    assert.ok(
+      !existsSync(path.join(fixtureDir, "whmcs-cnic-bundle-latest.zip")),
+    );
+  });
+
   test("formatWithPrettier formats matching build output", async () => {
     const builder = createBuilder({
       filesForArchive: ["release.json"],

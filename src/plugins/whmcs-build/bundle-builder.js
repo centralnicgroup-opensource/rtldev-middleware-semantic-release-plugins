@@ -22,7 +22,9 @@ export default class BundleBuilder {
   }
 
   get archiveFilePath() {
-    return this.resolve(`${this.config.archiveFileName}-latest.zip`);
+    return this.resolve(
+      `${this.config.archiveFileName}${this.config.archiveSuffix ?? "-latest"}.zip`,
+    );
   }
 
   async runComposer() {

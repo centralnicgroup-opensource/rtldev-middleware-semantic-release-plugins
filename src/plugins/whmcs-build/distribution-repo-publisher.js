@@ -1,12 +1,12 @@
 import { existsSync } from "node:fs";
-import { copyFile, mkdir } from "node:fs/promises";
+import { copyFile, mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 import { execa } from "execa";
 import { getContextEnv } from "../../core/index.js";
 import { resolveFiles } from "./files.js";
 import getError from "./get-error.js";
 
-const COMMIT_TYPES = { major: "chore", minor: "feat", patch: "fix" };
+const COMMIT_TYPES = { major: "feat", minor: "feat", patch: "fix" };
 
 /**
  * Publishes release artifacts to a downstream distribution repository: clone
@@ -107,7 +107,41 @@ export default class DistributionRepoPublisher {
       }
       return;
     }
-    await copyFile(source, path.join(this.dir, ".releaserc.json"));
+
+    const extension = path.extname(source);
+    const targetName = [".js", ".cjs", ".mjs"].includes(extension)
+      ? `.releaserc${extension}`
+      : ".releaserc.json";
+
+    // Keep one discoverable config in the distribution checkout. A previous
+    // release may have copied a different extension before configs were
+    // consolidated.
+    for (const name of [
+      ".releaserc.json",
+      ".releaserc.js",
+      ".releaserc.cjs",
+      ".releaserc.mjs",
+    ]) {
+      if (name !== targetName) {
+        await rm(path.join(this.dir, name), { force: true });
+      }
+    }
+    await copyFile(source, path.join(this.dir, targetName));
+  }
+
+  async copyReleaseConfigFiles() {
+    for (const entry of this.repo.releaseConfigFiles || []) {
+      const { from, to } =
+        typeof entry === "string" ? { from: entry, to: null } : entry;
+      const source = path.resolve(this.cwd, from);
+      if (!existsSync(source)) {
+        throw new Error(`Distribution support file was not found: ${from}`);
+      }
+
+      const target = path.join(this.dir, to ?? from);
+      await mkdir(path.dirname(target), { recursive: true });
+      await copyFile(source, target);
+    }
   }
 
   stripBuildPrefix(file) {
@@ -126,8 +160,8 @@ export default class DistributionRepoPublisher {
         );
       }
       for (const file of matches) {
-        // An explicit `to` renames the file (e.g. dropping the "-latest"
-        // suffix for the public cnic bundle); bare entries keep their name.
+        // An explicit `to` renames the file (for example, dropping a
+        // `-latest` suffix); bare entries keep their name.
         // Either way the build/ prefix is stripped so files land at the repo
         // root. `to` is meant for single-file entries, not multi-match globs.
         const target = path.join(this.dir, this.stripBuildPrefix(to ?? file));
@@ -149,7 +183,14 @@ export default class DistributionRepoPublisher {
     }
 
     const type = COMMIT_TYPES[nextRelease.type] || "chore";
-    return `${type}(release): ${nextRelease.version}`;
+    const title = `${type}(${this.repo.commitScope}): publish ${nextRelease.version}`;
+    const footer =
+      nextRelease.type === "major"
+        ? "BREAKING CHANGE: publish the new major distribution version."
+        : "";
+    return [title, nextRelease.notes || "", footer]
+      .filter(Boolean)
+      .join("\n\n");
   }
 
   async commitAndPush(message) {
@@ -191,6 +232,11 @@ export default class DistributionRepoPublisher {
         env: {
           ...this.env,
           customReleaseNotes: nextRelease.notes || "",
+          ...(this.repo.releaseTarget
+            ? { RELEASE_TARGET: this.repo.releaseTarget }
+            : {}),
+          RELEASE_REPOSITORY: "public",
+          SOURCE_RELEASE_VERSION: nextRelease.version,
           GH_TOKEN: this.token,
         },
       },
@@ -201,13 +247,16 @@ export default class DistributionRepoPublisher {
         `Published ${result.nextRelease.type} release version ${result.nextRelease.version} to the distribution repository.`,
       );
     } else {
-      this.logger.log("No release published in the distribution repository.");
+      throw new Error(
+        `No distribution release was calculated for source version ${nextRelease.version}.`,
+      );
     }
   }
 
   async publish(nextRelease) {
     await this.cloneOrCheckout();
     await this.copyReleaseConfig();
+    await this.copyReleaseConfigFiles();
     await this.copyArtifacts();
     const pushed = await this.commitAndPush(this.commitMessage(nextRelease));
     if (pushed) {

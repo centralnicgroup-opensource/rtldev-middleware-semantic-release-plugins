@@ -11,9 +11,7 @@ export const verifyConditions = hooks.verifyConditions;
 export const prepare = hooks.prepare;
 export const publish = hooks.publish;
 
-// Building blocks for standalone use, e.g. module releases that are
-// triggered manually with an explicit version rather than derived from a
-// semantic-release run.
+// Building blocks for local builds and development helpers outside a release.
 export {
   default as WhmcsBuildPlugin,
   createStandaloneContext,

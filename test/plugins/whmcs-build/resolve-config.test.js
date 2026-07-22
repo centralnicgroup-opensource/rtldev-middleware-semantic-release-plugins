@@ -10,6 +10,7 @@ describe("whmcs-build resolve-config", () => {
     const config = resolveConfig({ archiveFileName: "whmcs-cnic-bundle" });
 
     assert.equal(config.archiveFileName, "whmcs-cnic-bundle");
+    assert.equal(config.archiveSuffix, "-latest");
     assert.equal(config.archiveBuildPath, "build");
     assert.deepEqual(config.filesForArchive, []);
     assert.deepEqual(config.filesForArchiveMapping, {});
@@ -17,12 +18,21 @@ describe("whmcs-build resolve-config", () => {
     assert.equal(config.logoStamp, false);
     assert.equal(config.prettier, false);
     assert.equal(config.encrypt, false);
+    assert.equal(config.beforeBuild, false);
     assert.equal(config.archive, true);
     assert.equal(config.distributionRepo, false);
   });
 
   test("archiveFileName is false when missing", () => {
     assert.equal(resolveConfig({}).archiveFileName, false);
+  });
+
+  test("allows a product to keep its archive name without a suffix", () => {
+    assert.equal(
+      resolveConfig({ archiveFileName: "whmcs-cnic-bundle", archiveSuffix: "" })
+        .archiveSuffix,
+      "",
+    );
   });
 
   test("normalizes encrypt options with defaults", () => {
@@ -50,6 +60,30 @@ describe("whmcs-build resolve-config", () => {
     );
   });
 
+  test("normalizes a pre-build command", () => {
+    assert.deepEqual(
+      resolveConfig({
+        archiveFileName: "bundle",
+        beforeBuild: { command: "./generate.sh", args: ["brand"] },
+      }).beforeBuild,
+      { command: "./generate.sh", args: ["brand"] },
+    );
+  });
+
+  test("normalizes multiple builds independently", () => {
+    const config = resolveConfig({
+      builds: [
+        { archiveFileName: "first" },
+        { archiveFileName: "second", composer: false },
+      ],
+    });
+
+    assert.deepEqual(
+      config.builds.map(({ archiveFileName }) => archiveFileName),
+      ["first", "second"],
+    );
+  });
+
   test("normalizes distributionRepo options with defaults", () => {
     const config = resolveConfig({
       archiveFileName: "bundle",
@@ -64,7 +98,10 @@ describe("whmcs-build resolve-config", () => {
       releaserc: ".releaserc.distribution.json",
       tokenEnv: "DISTRIBUTION_REPO_TOKEN",
       runSemanticRelease: true,
+      releaseTarget: false,
+      commitScope: "release",
       commitMessage: false,
+      releaseConfigFiles: [],
     });
   });
 
@@ -139,6 +176,50 @@ describe("whmcs-build resolve-config", () => {
       assert.equal(config.archiveFileName, "override");
       // non-overridden keys still come from the file
       assert.deepEqual(config.filesForArchive, ["LICENSE"]);
+    });
+
+    test("loads named profiles as one build configuration", async () => {
+      await writeFile(
+        path.join(fixtureDir, "release-config.json"),
+        JSON.stringify({
+          archiveFileName: "base",
+          composer: { script: "./composer.sh" },
+          profiles: {
+            ibs: {
+              archiveFileName: "ibs",
+              filesForArchive: ["ibs/**"],
+            },
+            moniker: {
+              archiveFileName: "moniker",
+              beforeBuild: { command: "./generate.sh", args: ["moniker"] },
+            },
+          },
+        }),
+      );
+
+      const config = resolveConfig(
+        {
+          configFile: "release-config.json",
+          profiles: ["ibs", "moniker"],
+          distributionRepo: {
+            url: "https://github.com/acme/distribution.git",
+          },
+        },
+        { cwd: fixtureDir, env: {} },
+      );
+
+      assert.deepEqual(
+        config.builds.map(({ archiveFileName }) => archiveFileName),
+        ["ibs", "moniker"],
+      );
+      assert.equal(config.builds[0].composer.module, "ibs");
+      assert.equal(config.builds[1].composer.module, "moniker");
+      assert.equal(config.builds[1].beforeBuild.command, "./generate.sh");
+      assert.equal(
+        config.builds[0].distributionRepo.url,
+        "https://github.com/acme/distribution.git",
+      );
+      assert.equal(config.builds[1].distributionRepo, false);
     });
   });
 });

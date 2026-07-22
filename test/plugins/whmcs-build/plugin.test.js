@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, test } from "node:test";
@@ -72,6 +72,14 @@ describe("whmcs-build plugin", () => {
         { archiveFileName: "bundle", composer: {} },
         createContext(),
         "ComposerScriptRequired",
+      );
+    });
+
+    test("fails when a pre-build step has no command", async () => {
+      await assertVerifyFailsWith(
+        { archiveFileName: "bundle", beforeBuild: {} },
+        createContext(),
+        "BeforeBuildCommandRequired",
       );
     });
 
@@ -170,6 +178,34 @@ describe("whmcs-build plugin", () => {
         /no files matched/,
       );
     });
+
+    test("builds multiple archives and runs a pre-build command", async () => {
+      await writeFile(path.join(fixtureDir, "first.txt"), "first");
+      const generator = path.join(fixtureDir, "generate.sh");
+      await writeFile(generator, "#!/bin/sh\nprintf second > second.txt\n");
+      await chmod(generator, 0o755);
+
+      const plugin = new WhmcsBuildPlugin();
+      await plugin.prepare(
+        {
+          builds: [
+            {
+              archiveFileName: "first-bundle",
+              filesForArchive: ["first.txt"],
+            },
+            {
+              archiveFileName: "second-bundle",
+              filesForArchive: ["second.txt"],
+              beforeBuild: { command: generator },
+            },
+          ],
+        },
+        createContext({ cwd: fixtureDir }),
+      );
+
+      assert.ok(existsSync(path.join(fixtureDir, "first-bundle-latest.zip")));
+      assert.ok(existsSync(path.join(fixtureDir, "second-bundle-latest.zip")));
+    });
   });
 
   describe("publish", () => {
@@ -210,40 +246,6 @@ describe("whmcs-build plugin", () => {
           distributionRepo: { url: "https://github.com/acme/public.git" },
         },
         { cwd: fixtureDir, env: {} },
-      );
-    });
-  });
-
-  describe("release", () => {
-    test("runs prepare then publish for a standalone, manually-versioned release", async () => {
-      for (const [file, content] of [
-        ["LICENSE", "license"],
-        ["modules/registrars/cnic/cnic.php", "<?php echo 1;"],
-      ]) {
-        await mkdir(path.join(fixtureDir, path.dirname(file)), {
-          recursive: true,
-        });
-        await writeFile(path.join(fixtureDir, file), content);
-      }
-
-      const plugin = new WhmcsBuildPlugin();
-      await plugin.release(
-        {
-          archiveFileName: "whmcs-tpp-registrar",
-          filesForArchive: ["LICENSE", "modules/**"],
-        },
-        {
-          version: "1.2.3",
-          type: "minor",
-          notes: "notes",
-          cwd: fixtureDir,
-          env: {},
-          logger,
-        },
-      );
-
-      assert.ok(
-        existsSync(path.join(fixtureDir, "whmcs-tpp-registrar-latest.zip")),
       );
     });
   });

@@ -2,7 +2,7 @@ export function ArchiveFileNameRequired() {
   return {
     message: "The `archiveFileName` option is required.",
     details:
-      "Set `archiveFileName` in the plugin configuration, for example `whmcs-cnic-bundle`. It is used for the release archive name (`<archiveFileName>-latest.zip`).",
+      "Set `archiveFileName` in the plugin configuration, for example `whmcs-cnic-bundle`. It is used with `archiveSuffix` (default `-latest`) for the release archive name.",
   };
 }
 
@@ -11,6 +11,14 @@ export function ComposerScriptRequired() {
     message: "The `composer.script` option is required.",
     details:
       "Composer preparation is enabled but no script is configured. Set `composer.script` to an executable build script, or disable Composer preparation with `composer: false`.",
+  };
+}
+
+export function BeforeBuildCommandRequired() {
+  return {
+    message: "The `beforeBuild.command` option is required.",
+    details:
+      "A pre-build step is configured without a command. Set `beforeBuild.command` to an executable or disable the step with `beforeBuild: false`.",
   };
 }
 

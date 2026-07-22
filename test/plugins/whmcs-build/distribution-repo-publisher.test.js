@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, test } from "node:test";
@@ -57,6 +57,25 @@ describe("whmcs-build DistributionRepoPublisher", () => {
     );
     return new DistributionRepoPublisher(config, { logger, env });
   }
+
+  test("writes conventional downstream commits with the configured scope", () => {
+    const publisher = createPublisher();
+    assert.equal(
+      publisher.commitMessage({ type: "patch", version: "1.2.3" }),
+      "fix(release): publish 1.2.3",
+    );
+
+    publisher.repo.commitScope = "ibs-moniker";
+
+    assert.equal(
+      publisher.commitMessage({ type: "patch", version: "5.5.10" }),
+      "fix(ibs-moniker): publish 5.5.10",
+    );
+    assert.equal(
+      publisher.commitMessage({ type: "major", version: "6.0.0" }),
+      "feat(ibs-moniker): publish 6.0.0\n\nBREAKING CHANGE: publish the new major distribution version.",
+    );
+  });
 
   test("clones the repository when no local checkout exists", async () => {
     const publisher = createPublisher();
@@ -115,6 +134,22 @@ describe("whmcs-build DistributionRepoPublisher", () => {
     );
   });
 
+  test("preserves a JavaScript config extension and removes the stale JSON config", async () => {
+    const publisher = createPublisher();
+    await publisher.cloneOrCheckout();
+    publisher.repo.releaserc = ".releaserc.public.mjs";
+    await writeFile(
+      path.join(workDir, ".releaserc.public.mjs"),
+      "export default {};\n",
+    );
+    await writeFile(path.join(publisher.dir, ".releaserc.json"), "{}\n");
+
+    await publisher.copyReleaseConfig();
+
+    assert.ok(existsSync(path.join(publisher.dir, ".releaserc.mjs")));
+    assert.ok(!existsSync(path.join(publisher.dir, ".releaserc.json")));
+  });
+
   test("restores the clean remote URL after pushing", async () => {
     const publisher = createPublisher();
     await publisher.cloneOrCheckout();
@@ -132,6 +167,20 @@ describe("whmcs-build DistributionRepoPublisher", () => {
       "origin",
     ]);
     assert.equal(origin, remoteUrl);
+  });
+
+  test("copies release support files beside the downstream config", async () => {
+    const publisher = createPublisher();
+    await publisher.cloneOrCheckout();
+    publisher.repo.releaseConfigFiles = ["release-products.json"];
+    await writeFile(path.join(workDir, "release-products.json"), "{}\n");
+
+    await publisher.copyReleaseConfigFiles();
+
+    assert.equal(
+      await readFile(path.join(publisher.dir, "release-products.json"), "utf8"),
+      "{}\n",
+    );
   });
 
   test("skips downstream semantic-release when no artifacts changed", async () => {

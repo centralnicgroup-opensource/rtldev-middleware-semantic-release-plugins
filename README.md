@@ -258,8 +258,8 @@ Releases Maven projects from a semantic-release pipeline. The plugin:
 Builds and publishes WHMCS module bundles. Aimed at WHMCS module authors who ship an [IonCube](https://www.ioncube.com/)-encoded release archive to a downstream distribution repository — this consolidates that pipeline into semantic-release lifecycle hooks instead of a standalone task runner:
 
 - **`verifyConditions`** — validates the configuration, checks the IonCube encoder exists (when encryption is enabled), the distribution-repository token is set (when publishing is enabled), and optional dependencies are installed.
-- **`prepare`** — stamps the release version onto the module logo (optional), installs production Composer dependencies, cleans and rebuilds the build directory from the configured file globs (stripping `.public` from file names), formats the build output with Prettier, encrypts the configured PHP files with IonCube inside a managed license window, verifies every protected file carries an IonCube header, and zips the build directory into `<archiveFileName>-latest.zip`.
-- **`publish`** — clones or refreshes a downstream distribution repository, copies the configured artifacts (renaming `<archiveFileName>-latest` to `<archiveFileName>`), commits and pushes, and optionally runs a nested semantic-release inside that repository. This is useful for shipping a built/encoded bundle from a private source repository into a separate public or internal distribution repository.
+- **`prepare`** — stamps the release version onto the module logo (optional), installs production Composer dependencies, cleans and rebuilds the build directory from the configured file globs (stripping `.public` from file names), formats the build output with Prettier, encrypts the configured PHP files with IonCube inside a managed license window, verifies every protected file carries an IonCube header, and zips the build directory into `<archiveFileName><archiveSuffix>.zip` (`-latest` by default).
+- **`publish`** — clones or refreshes a downstream distribution repository, copies the configured artifacts (renaming the configured archive suffix when requested), commits and pushes, and optionally runs a nested semantic-release inside that repository. This is useful for shipping a built/encoded bundle from a private source repository into a separate public or internal distribution repository.
 
 ```json
 [
@@ -294,19 +294,41 @@ Builds and publishes WHMCS module bundles. Aimed at WHMCS module authors who shi
 ]
 ```
 
-| Option                   | Default  | Description                                                                                                                                                                                                      |
-| ------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `configFile`             | unset    | Path (relative to `cwd`) to a JSON file to load these options from. Inline options override the file. Lets a static `.releaserc.json` share one config file with other consumers instead of duplicating options. |
-| `archiveFileName`        | required | Base name for the release archive (`<archiveFileName>-latest.zip`).                                                                                                                                              |
-| `archiveBuildPath`       | `build`  | Directory the bundle is assembled in.                                                                                                                                                                            |
-| `filesForArchive`        | `[]`     | Globs copied into the build directory. `!` prefix negates; `.public` is stripped from file names.                                                                                                                |
-| `filesForArchiveMapping` | `{}`     | Map of source glob → list of destination directories inside the build directory.                                                                                                                                 |
-| `composer`               | `false`  | `{ script, module }` — script that prepares production Composer dependencies.                                                                                                                                    |
-| `logoStamp`              | `false`  | `{ input, output, fontSize, color, padding }` — stamp `v<version>` onto a logo (needs `skia-canvas`).                                                                                                            |
-| `prettier`               | `false`  | `{ files }` — format the matched build output (needs `prettier`).                                                                                                                                                |
-| `encrypt`                | `false`  | `{ encoderPath, commands, files, sudo }` — IonCube encryption of the matched files.                                                                                                                              |
-| `archive`                | `true`   | Zip the build directory after all prepare steps.                                                                                                                                                                 |
-| `distributionRepo`       | `false`  | `{ url, dir, branch, files, releaserc, tokenEnv, runSemanticRelease, commitMessage }` — see below.                                                                                                               |
+For several archives sharing one semantic-release version, keep the build
+profiles in one JSON file and select them from the plugin configuration:
+
+```json
+[
+  "@team-internet/semantic-release-plugins/whmcs-build",
+  {
+    "configFile": "release-config.json",
+    "profiles": ["ibs", "moniker"]
+  }
+]
+```
+
+The base settings are merged into each named profile. A profile's
+`beforeBuild` command runs before that archive is prepared. Generated archives
+use the configured `archiveSuffix` (default `-latest`); distribution `files`
+entries can rename them when they are published.
+
+| Option                   | Default   | Description                                                                                                                                                         |
+| ------------------------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `configFile`             | unset     | Path (relative to `cwd`) to a JSON file to load these options from. Inline options override the file.                                                               |
+| `profiles`               | unset     | Named profiles from `configFile`, built in order under the same semantic-release version.                                                                           |
+| `builds`                 | unset     | Array of complete build configurations. Runs each build in order under the same semantic-release version.                                                           |
+| `archiveFileName`        | required  | Base name for the release archive (`<archiveFileName><archiveSuffix>.zip`).                                                                                         |
+| `archiveSuffix`          | `-latest` | Suffix inserted before `.zip`. Set to an empty string when a product must keep `<archiveFileName>.zip`.                                                             |
+| `archiveBuildPath`       | `build`   | Directory the bundle is assembled in.                                                                                                                               |
+| `filesForArchive`        | `[]`      | Globs copied into the build directory. `!` prefix negates; `.public` is stripped from file names.                                                                   |
+| `filesForArchiveMapping` | `{}`      | Map of source glob → list of destination directories inside the build directory.                                                                                    |
+| `composer`               | `false`   | `{ script, module }` — script that prepares production Composer dependencies.                                                                                       |
+| `beforeBuild`            | `false`   | `{ command, args }` — optional executable and argument list run immediately before this build. Useful for generating a branded module from another module's source. |
+| `logoStamp`              | `false`   | `{ input, output, fontSize, color, padding }` — stamp `v<version>` onto a logo (needs `skia-canvas`).                                                               |
+| `prettier`               | `false`   | `{ files }` — format the matched build output (needs `prettier`).                                                                                                   |
+| `encrypt`                | `false`   | `{ encoderPath, commands, files, sudo }` — IonCube encryption of the matched files.                                                                                 |
+| `archive`                | `true`    | Zip the build directory after all prepare steps.                                                                                                                    |
+| `distributionRepo`       | `false`   | `{ url, dir, branch, files, releaserc, tokenEnv, runSemanticRelease, releaseConfigFiles, commitMessage }` — see below.                                              |
 
 **`distributionRepo` fields:**
 
@@ -316,16 +338,18 @@ Builds and publishes WHMCS module bundles. Aimed at WHMCS module authors who shi
 | `dir`                | `distribution-repo`            | Local directory the repository is cloned into.                                                                                                                                                                                                                                                                 |
 | `branch`             | `main`                         | Branch to check out, commit to, and push.                                                                                                                                                                                                                                                                      |
 | `files`              | `[]`                           | Artifacts to copy into the distribution repository. Each entry is a glob string (copied as-is), or a `{ "from": "<glob>", "to": "<path>" }` pair that renames the matched file (e.g. dropping a `-latest` suffix). The `archiveBuildPath` prefix is stripped from every target so files land at the repo root. |
-| `releaserc`          | `.releaserc.distribution.json` | semantic-release config copied into the distribution repository as `.releaserc.json`.                                                                                                                                                                                                                          |
+| `releaserc`          | `.releaserc.distribution.json` | semantic-release config copied into the distribution repository while preserving its `.json`, `.js`, `.cjs`, or `.mjs` extension.                                                                                                                                                                              |
 | `tokenEnv`           | `DISTRIBUTION_REPO_TOKEN`      | Environment variable holding a GitHub token with push access to the distribution repository.                                                                                                                                                                                                                   |
 | `runSemanticRelease` | `true`                         | Run a nested semantic-release inside the distribution repository after pushing.                                                                                                                                                                                                                                |
-| `commitMessage`      | `false`                        | Custom commit message template (`${version}`, `${type}`, `${notes}`); defaults to a conventional-commit message derived from the release type.                                                                                                                                                                 |
+| `releaseTarget`      | `false`                        | Optional `RELEASE_TARGET` value passed to the downstream semantic-release process when one config contains multiple independent release streams.                                                                                                                                                               |
+| `commitScope`        | `release`                      | Conventional Commit scope used for the generated distribution commit. Give each independently versioned product its own scope when sharing a distribution repository.                                                                                                                                          |
+| `commitMessage`      | `false`                        | Custom commit message template (`${version}`, `${type}`, `${notes}`); defaults to a conventional commit with the configured scope and the source release type.                                                                                                                                                 |
+| `releaseConfigFiles` | `[]`                           | JSON or other support files copied beside the release config before nested semantic-release runs.                                                                                                                                                                                                              |
 
-The building blocks (`BundleBuilder`, `IonCubeEncoder`, `DistributionRepoPublisher`) are exported from the subpath for standalone scripts, e.g. module bundles published without a semantic-release version bump. Three additional exports support that use case:
+The building blocks (`BundleBuilder`, `IonCubeEncoder`, `DistributionRepoPublisher`) are exported from the subpath for local builds and development helpers. Additional exports support that use case:
 
 - **`WhmcsBuildPlugin.build(pluginConfig, options)`** — builds the bundle only (no publish), constructing the context from plain options (`version`, `type`, `notes`, `repositoryUrl`, `cwd`, `env`, `logger`) so callers never build a context themselves.
-- **`WhmcsBuildPlugin.release(pluginConfig, options)`** — `build` then `publish` in one call, taking the same options. Use this for releases triggered manually with an explicit version rather than derived from commit history.
-- **`createStandaloneContext(options)`** — the context builder `build`/`release` use internally, exported for callers that need to drive `prepare`/`publish` directly.
+- **`createStandaloneContext(options)`** — the context builder used by local helpers that need a semantic-release-shaped context.
 - **`resolveFiles(patterns, { cwd })`** and **`cleanupPaths(paths, { cwd, logger })`** — the glob-resolving and directory-removal helpers the plugin uses internally, exported for consumers that want the same file-handling behavior in their own scripts.
 
 ---

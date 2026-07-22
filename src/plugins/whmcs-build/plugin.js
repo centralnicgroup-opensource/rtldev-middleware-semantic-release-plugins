@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { execa } from "execa";
 import {
   SemanticReleasePlugin,
   getContextEnv,
@@ -16,9 +17,8 @@ import resolveConfig from "./resolve-config.js";
 
 /**
  * Builds the context object semantic-release normally passes to a plugin's
- * lifecycle hooks. Standalone callers (anything driving WhmcsBuildPlugin
- * outside of a real semantic-release run, e.g. a manually-versioned release)
- * need this same shape - this is the one place that builds it.
+ * lifecycle hooks. Local build and development helpers need the same shape,
+ * so this is the one place that constructs it.
  */
 export function createStandaloneContext({
   version,
@@ -48,53 +48,83 @@ export default class WhmcsBuildPlugin extends SemanticReleasePlugin {
   }
 
   validateConfig(config) {
-    return runConfigValidators(config, [
-      validateRequiredConfig("archiveFileName", "ArchiveFileNameRequired"),
-      (cfg) =>
-        cfg.composer && !cfg.composer.script ? "ComposerScriptRequired" : null,
-      (cfg) =>
-        cfg.encrypt && !cfg.encrypt.encoderPath ? "EncoderPathRequired" : null,
-      (cfg) =>
-        cfg.encrypt && !cfg.encrypt.commands.length
-          ? "EncoderCommandsRequired"
-          : null,
-      (cfg) =>
-        cfg.distributionRepo && !cfg.distributionRepo.url
-          ? "DistributionRepoUrlRequired"
-          : null,
-    ]);
+    return this.configs(config).flatMap((build) =>
+      runConfigValidators(build, [
+        validateRequiredConfig("archiveFileName", "ArchiveFileNameRequired"),
+        (cfg) =>
+          cfg.composer && !cfg.composer.script
+            ? "ComposerScriptRequired"
+            : null,
+        (cfg) =>
+          cfg.encrypt && !cfg.encrypt.encoderPath
+            ? "EncoderPathRequired"
+            : null,
+        (cfg) =>
+          cfg.encrypt && !cfg.encrypt.commands.length
+            ? "EncoderCommandsRequired"
+            : null,
+        (cfg) =>
+          cfg.beforeBuild && !cfg.beforeBuild.command
+            ? "BeforeBuildCommandRequired"
+            : null,
+        (cfg) =>
+          cfg.distributionRepo && !cfg.distributionRepo.url
+            ? "DistributionRepoUrlRequired"
+            : null,
+      ]),
+    );
   }
 
   async afterVerify(config, _pluginConfig, context) {
-    if (
-      config.encrypt &&
-      !existsSync(path.resolve(config.cwd, config.encrypt.encoderPath))
-    ) {
-      throw getError("EncoderNotFound");
-    }
+    for (const build of this.configs(config)) {
+      if (
+        build.encrypt &&
+        !existsSync(path.resolve(build.cwd, build.encrypt.encoderPath))
+      ) {
+        throw getError("EncoderNotFound");
+      }
 
-    if (
-      config.distributionRepo &&
-      !getContextEnv(context)[config.distributionRepo.tokenEnv]
-    ) {
-      throw getError("NoDistributionRepoToken");
-    }
+      if (
+        build.distributionRepo &&
+        !getContextEnv(context)[build.distributionRepo.tokenEnv]
+      ) {
+        throw getError("NoDistributionRepoToken");
+      }
 
-    if (config.logoStamp) {
-      try {
-        await import("skia-canvas");
-      } catch {
-        throw getError("SkiaCanvasMissing");
+      if (build.logoStamp) {
+        try {
+          await import("skia-canvas");
+        } catch {
+          throw getError("SkiaCanvasMissing");
+        }
       }
     }
+  }
+
+  configs(config) {
+    return config.builds || [config];
   }
 
   async prepare(pluginConfig, context) {
     await this.ensureVerified(pluginConfig, context);
 
-    const config = await this.resolveConfig(pluginConfig, context);
+    const resolved = await this.resolveConfig(pluginConfig, context);
+    for (const config of this.configs(resolved)) {
+      await this.prepareBuild(config, context);
+    }
+  }
+
+  async prepareBuild(config, context) {
     const { logger = console, nextRelease } = context;
     const builder = new BundleBuilder(config, logger);
+
+    if (config.beforeBuild) {
+      logger.log(`Running ${config.beforeBuild.command}`);
+      await execa(config.beforeBuild.command, config.beforeBuild.args, {
+        cwd: config.cwd,
+        stdio: "inherit",
+      });
+    }
 
     if (config.logoStamp) {
       if (nextRelease?.version) {
@@ -139,41 +169,40 @@ export default class WhmcsBuildPlugin extends SemanticReleasePlugin {
   }
 
   async publish(pluginConfig, context) {
-    const config = await this.resolveConfig(pluginConfig, context);
+    const resolved = await this.resolveConfig(pluginConfig, context);
+    const builds = this.configs(resolved);
+    const publishable = builds.filter((config) => config.distributionRepo);
 
-    if (!config.distributionRepo) {
+    if (!publishable.length) {
       context.logger?.log?.(
         "No distribution repository configured, skipping publish.",
       );
       return;
     }
 
-    const publisher = new DistributionRepoPublisher(config, context);
-    await publisher.publish(context.nextRelease);
+    for (const config of publishable) {
+      const publisher = new DistributionRepoPublisher(config, context);
+      await publisher.publish(context.nextRelease);
+    }
   }
 
   /**
    * Convenience for standalone callers that only want to build the bundle,
    * no publish: builds the context from plain options so callers never
-   * construct one themselves. The build-only counterpart to `release()`.
+   * construct one themselves.
    */
   async build(pluginConfig, options = {}) {
     const context = createStandaloneContext(options);
-    await this.prepare({ ...pluginConfig, distributionRepo: false }, context);
-    return context;
-  }
-
-  /**
-   * Convenience for standalone callers: builds then publishes in one call,
-   * from plain options instead of a real semantic-release invocation.
-   * Useful for releases triggered manually with an explicit version rather
-   * than derived from commit history (e.g. a module that versions itself
-   * independently).
-   */
-  async release(pluginConfig, options = {}) {
-    const context = createStandaloneContext(options);
-    await this.prepare(pluginConfig, context);
-    await this.publish(pluginConfig, context);
+    const buildConfig = pluginConfig.builds
+      ? {
+          ...pluginConfig,
+          builds: pluginConfig.builds.map((build) => ({
+            ...build,
+            distributionRepo: false,
+          })),
+        }
+      : { ...pluginConfig, distributionRepo: false };
+    await this.prepare(buildConfig, context);
     return context;
   }
 }
