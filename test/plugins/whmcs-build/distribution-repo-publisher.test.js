@@ -339,5 +339,34 @@ describe("whmcs-build DistributionRepoPublisher", () => {
         /Required distribution artifact pattern matched no files/,
       );
     });
+
+    test("strips internal links from Markdown artifacts when enabled", async () => {
+      await mkdir(path.join(workDir, "build"), { recursive: true });
+      await writeFile(
+        path.join(workDir, "build/HISTORY.md"),
+        "## [1.0.0](https://example.test/compare/0.9.0...1.0.0)\n\nSee [docs](https://docs.example.test/guide).",
+      );
+
+      const env = { DISTRIBUTION_REPO_TOKEN: "unused" };
+      const config = resolveConfig(
+        {
+          archiveFileName: "bundle",
+          distributionRepo: {
+            url: remoteUrl,
+            dir: "checkout",
+            files: ["build/HISTORY.md"],
+          },
+        },
+        { cwd: workDir, env },
+      );
+      const publisher = new DistributionRepoPublisher(config, { logger, env });
+      await publisher.cloneOrCheckout();
+      await publisher.copyArtifacts();
+
+      assert.equal(
+        await readFile(path.join(publisher.dir, "HISTORY.md"), "utf8"),
+        "## 1.0.0\n\nSee [docs](https://docs.example.test/guide).",
+      );
+    });
   });
 });

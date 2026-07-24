@@ -1,8 +1,11 @@
 import { existsSync } from "node:fs";
-import { copyFile, mkdir, rm } from "node:fs/promises";
+import { copyFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { execa } from "execa";
-import { getContextEnv } from "../../core/index.js";
+import {
+  getContextEnv,
+  stripInternalReleaseLinks,
+} from "../../core/index.js";
 import { resolveFiles } from "./files.js";
 import getError from "./get-error.js";
 
@@ -176,7 +179,13 @@ export default class DistributionRepoPublisher {
         // root. `to` is meant for single-file entries, not multi-match globs.
         const target = path.join(this.dir, this.stripBuildPrefix(to ?? file));
         await mkdir(path.dirname(target), { recursive: true });
-        await copyFile(path.resolve(this.cwd, file), target);
+        const source = path.resolve(this.cwd, file);
+        if (path.extname(file) === ".md") {
+          const contents = await readFile(source, "utf8");
+          await writeFile(target, stripInternalReleaseLinks(contents));
+        } else {
+          await copyFile(source, target);
+        }
         this.artifactFiles.add(this.stripBuildPrefix(to ?? file));
         copied += 1;
       }
