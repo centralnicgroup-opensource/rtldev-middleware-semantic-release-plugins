@@ -21,6 +21,8 @@ export default class DistributionRepoPublisher {
     this.env = getContextEnv(context);
     this.cwd = config.cwd;
     this.dir = path.resolve(this.cwd, this.repo.dir);
+    this.transientConfigFiles = new Set();
+    this.artifactFiles = new Set();
   }
 
   get token() {
@@ -113,19 +115,20 @@ export default class DistributionRepoPublisher {
       ? `.releaserc${extension}`
       : ".releaserc.json";
 
-    // Keep one discoverable config in the distribution checkout. A previous
-    // release may have copied a different extension before configs were
-    // consolidated.
-    for (const name of [
+    // Release configuration is needed only while nested semantic-release is
+    // running. Remove any previously tracked config and keep every generated
+    // config transient so it is never published to the distribution repo.
+    const configFiles = [
       ".releaserc.json",
       ".releaserc.js",
       ".releaserc.cjs",
       ".releaserc.mjs",
-    ]) {
-      if (name !== targetName) {
-        await rm(path.join(this.dir, name), { force: true });
-      }
+    ];
+    for (const name of configFiles) {
+      await this.untrackTransientFile(name);
+      await rm(path.join(this.dir, name), { force: true });
     }
+    this.transientConfigFiles.add(targetName);
     await copyFile(source, path.join(this.dir, targetName));
   }
 
@@ -140,8 +143,15 @@ export default class DistributionRepoPublisher {
 
       const target = path.join(this.dir, to ?? from);
       await mkdir(path.dirname(target), { recursive: true });
+      const relativeTarget = to ?? from;
+      await this.untrackTransientFile(relativeTarget);
+      this.transientConfigFiles.add(relativeTarget);
       await copyFile(source, target);
     }
+  }
+
+  async untrackTransientFile(file) {
+    await this.git(["rm", "--cached", "--ignore-unmatch", "--", file]);
   }
 
   stripBuildPrefix(file) {
@@ -167,6 +177,7 @@ export default class DistributionRepoPublisher {
         const target = path.join(this.dir, this.stripBuildPrefix(to ?? file));
         await mkdir(path.dirname(target), { recursive: true });
         await copyFile(path.resolve(this.cwd, file), target);
+        this.artifactFiles.add(this.stripBuildPrefix(to ?? file));
         copied += 1;
       }
     }
@@ -200,7 +211,24 @@ export default class DistributionRepoPublisher {
       return false;
     }
 
-    await this.git(["add", "-A"]);
+    if (this.artifactFiles.size) {
+      await this.git(["add", "--", ...this.artifactFiles]);
+    } else {
+      // Keep the low-level helper useful for callers that stage their own
+      // files directly; normal publish flows stage only copied artifacts.
+      await this.git(["add", "-A"]);
+    }
+
+    const { stdout: staged } = await this.git([
+      "diff",
+      "--cached",
+      "--name-only",
+    ]);
+    if (!staged.trim()) {
+      this.logger.log("No changes to publish to the distribution repository.");
+      return false;
+    }
+
     await this.git(["commit", "-m", message]);
 
     await this.withAuthenticatedRemote(async () => {
@@ -210,6 +238,30 @@ export default class DistributionRepoPublisher {
     });
     this.logger.log("Pushed release artifacts to the distribution repository.");
     return true;
+  }
+
+  async withProcessEnv(values, work) {
+    const previous = new Map();
+    for (const [name, value] of Object.entries(values)) {
+      previous.set(name, process.env[name]);
+      if (value === undefined || value === null) {
+        delete process.env[name];
+      } else {
+        process.env[name] = String(value);
+      }
+    }
+
+    try {
+      return await work();
+    } finally {
+      for (const [name, value] of previous) {
+        if (value === undefined) {
+          delete process.env[name];
+        } else {
+          process.env[name] = value;
+        }
+      }
+    }
   }
 
   async releaseDistributionRepo(nextRelease = {}) {
@@ -222,24 +274,27 @@ export default class DistributionRepoPublisher {
       "Running semantic-release in the distribution repository...",
     );
 
-    const result = await semanticRelease(
-      {
-        branches: [this.repo.branch],
-        repositoryUrl: this.repo.url,
-      },
-      {
-        cwd: this.dir,
-        env: {
-          ...this.env,
-          customReleaseNotes: nextRelease.notes || "",
-          ...(this.repo.releaseTarget
-            ? { RELEASE_TARGET: this.repo.releaseTarget }
-            : {}),
-          RELEASE_REPOSITORY: "public",
-          SOURCE_RELEASE_VERSION: nextRelease.version,
-          GH_TOKEN: this.token,
+    const releaseEnv = {
+      ...this.env,
+      customReleaseNotes: nextRelease.notes || "",
+      ...(this.repo.releaseTarget
+        ? { RELEASE_TARGET: this.repo.releaseTarget }
+        : {}),
+      RELEASE_REPOSITORY: "public",
+      SOURCE_RELEASE_VERSION: nextRelease.version,
+      GH_TOKEN: this.token,
+    };
+    const result = await this.withProcessEnv(releaseEnv, () =>
+      semanticRelease(
+        {
+          branches: [this.repo.branch],
+          repositoryUrl: this.repo.url,
         },
-      },
+        {
+          cwd: this.dir,
+          env: releaseEnv,
+        },
+      ),
     );
 
     if (result) {
@@ -254,13 +309,19 @@ export default class DistributionRepoPublisher {
   }
 
   async publish(nextRelease) {
-    await this.cloneOrCheckout();
-    await this.copyReleaseConfig();
-    await this.copyReleaseConfigFiles();
-    await this.copyArtifacts();
-    const pushed = await this.commitAndPush(this.commitMessage(nextRelease));
-    if (pushed) {
-      await this.releaseDistributionRepo(nextRelease);
+    try {
+      await this.cloneOrCheckout();
+      await this.copyReleaseConfig();
+      await this.copyReleaseConfigFiles();
+      await this.copyArtifacts();
+      const pushed = await this.commitAndPush(this.commitMessage(nextRelease));
+      if (pushed) {
+        await this.releaseDistributionRepo(nextRelease);
+      }
+    } finally {
+      for (const file of this.transientConfigFiles) {
+        await rm(path.join(this.dir, file), { force: true, recursive: true });
+      }
     }
   }
 }

@@ -183,6 +183,59 @@ describe("whmcs-build DistributionRepoPublisher", () => {
     );
   });
 
+  test("does not publish transient release configuration files", async () => {
+    const publisher = createPublisher();
+    publisher.repo.releaserc = ".releaserc.public.mjs";
+    publisher.repo.releaseConfigFiles = ["release-products.json"];
+    publisher.repo.runSemanticRelease = false;
+    publisher.repo.files = [{ from: "bundle-latest.zip", to: null }];
+
+    await writeFile(
+      path.join(workDir, ".releaserc.public.mjs"),
+      "export default {};\n",
+    );
+    await writeFile(path.join(workDir, "release-products.json"), "{}\n");
+    await writeFile(path.join(workDir, "bundle-latest.zip"), "zip\n");
+
+    await publisher.publish({ version: "1.0.0", type: "patch" });
+
+    assert.ok(existsSync(path.join(publisher.dir, "bundle-latest.zip")));
+    assert.ok(!existsSync(path.join(publisher.dir, ".releaserc.mjs")));
+    assert.ok(!existsSync(path.join(publisher.dir, "release-products.json")));
+    const { stdout: status } = await git(publisher.dir, [
+      "status",
+      "--porcelain",
+    ]);
+    assert.equal(status.trim(), "");
+  });
+
+  test("exposes nested release selectors while loading its config", async () => {
+    const publisher = createPublisher();
+    const original = process.env.RELEASE_REPOSITORY;
+    process.env.RELEASE_REPOSITORY = "private";
+    let selectedRepository;
+
+    await publisher.withProcessEnv(
+      {
+        RELEASE_REPOSITORY: "public",
+        SOURCE_RELEASE_VERSION: "1.0.0",
+      },
+      async () => {
+        selectedRepository = process.env.RELEASE_REPOSITORY;
+        assert.equal(process.env.SOURCE_RELEASE_VERSION, "1.0.0");
+      },
+    );
+
+    assert.equal(selectedRepository, "public");
+    assert.equal(process.env.RELEASE_REPOSITORY, "private");
+    if (original === undefined) {
+      delete process.env.RELEASE_REPOSITORY;
+    } else {
+      process.env.RELEASE_REPOSITORY = original;
+    }
+    delete process.env.SOURCE_RELEASE_VERSION;
+  });
+
   test("skips downstream semantic-release when no artifacts changed", async () => {
     const publisher = createPublisher();
     let released = false;
