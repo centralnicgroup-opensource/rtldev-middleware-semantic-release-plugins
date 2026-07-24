@@ -53,7 +53,7 @@ export function stripInternalReleaseLinks(value = "") {
       const isCommit = /\/commit\//i.test(url);
       const isInternal =
         isCommit ||
-        /\/(?:issues|pull|merge_requests)\//i.test(url) ||
+        /\/(?:compare|issues|pull|merge_requests)\//i.test(url) ||
         /atlassian\.net/i.test(url);
 
       if (isCommit) {
