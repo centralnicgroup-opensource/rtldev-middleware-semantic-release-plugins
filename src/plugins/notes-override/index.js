@@ -2,7 +2,7 @@ import {
   createPluginHooks,
   runConfigValidators,
   SemanticReleasePlugin,
-  stripMarkdownLinks,
+  stripInternalReleaseLinks,
   validateRequiredConfig,
 } from "../../core/index.js";
 import resolveConfig from "./resolve-config.js";
@@ -25,7 +25,7 @@ class NotesOverridePlugin extends SemanticReleasePlugin {
 
   async generateNotes(pluginConfig, context) {
     const config = await this.resolveConfig(pluginConfig, context);
-    return stripMarkdownLinks(config.notes);
+    return stripInternalReleaseLinks(config.notes);
   }
 }
 

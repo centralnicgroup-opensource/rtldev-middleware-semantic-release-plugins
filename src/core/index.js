@@ -45,10 +45,17 @@ export function safeDecodeURIComponent(value = "") {
   }
 }
 
-export function stripMarkdownLinks(value = "") {
+export function stripInternalReleaseLinks(value = "") {
   return safeDecodeURIComponent(value).replace(
-    /\(\[([^[\]]*)\]\([^()]*\)\)|\[([^[\]]*)\]\([^()]*\)/gi,
-    (_match, commitText, linkText) => linkText || commitText || "",
+    /\(\[([^[\]]*)\]\(([^()]*)\)\)|\[([^[\]]*)\]\(([^()]*)\)/gi,
+    (_match, parentText, parentUrl, linkText, linkUrl) => {
+      const url = linkUrl || parentUrl || "";
+      const isInternal =
+        /\/(?:commit|issues|pull|merge_requests)\//i.test(url) ||
+        /atlassian\.net/i.test(url);
+
+      return isInternal ? linkText || parentText || "" : _match;
+    },
   );
 }
 
