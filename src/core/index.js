@@ -50,9 +50,15 @@ export function stripInternalReleaseLinks(value = "") {
     /\(\[([^[\]]*)\]\(([^()]*)\)\)|\[([^[\]]*)\]\(([^()]*)\)/gi,
     (_match, parentText, parentUrl, linkText, linkUrl) => {
       const url = linkUrl || parentUrl || "";
+      const isCommit = /\/commit\//i.test(url);
       const isInternal =
-        /\/(?:commit|issues|pull|merge_requests)\//i.test(url) ||
+        isCommit ||
+        /\/(?:issues|pull|merge_requests)\//i.test(url) ||
         /atlassian\.net/i.test(url);
+
+      if (isCommit) {
+        return "";
+      }
 
       return isInternal ? linkText || parentText || "" : _match;
     },

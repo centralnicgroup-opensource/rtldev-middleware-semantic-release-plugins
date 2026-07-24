@@ -37,7 +37,7 @@ describe("notes-override", () => {
 
     assert.equal(
       notes,
-      "Release abc1234, closes #123, Jira RSRMID-2889, see [docs](https://docs.example.test/guide)",
+      "Release , closes #123, Jira RSRMID-2889, see [docs](https://docs.example.test/guide)",
     );
   });
 });
