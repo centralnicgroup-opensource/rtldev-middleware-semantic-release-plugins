@@ -196,6 +196,9 @@ describe("whmcs-build DistributionRepoPublisher", () => {
     );
     await writeFile(path.join(workDir, "release-products.json"), "{}\n");
     await writeFile(path.join(workDir, "bundle-latest.zip"), "zip\n");
+    await publisher.cloneOrCheckout();
+    await git(publisher.dir, ["config", "user.email", "test@example.com"]);
+    await git(publisher.dir, ["config", "user.name", "Test"]);
 
     await publisher.publish({ version: "1.0.0", type: "patch" });
 
