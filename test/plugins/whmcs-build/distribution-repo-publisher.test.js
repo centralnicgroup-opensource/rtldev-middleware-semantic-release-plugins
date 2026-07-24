@@ -212,6 +212,35 @@ describe("whmcs-build DistributionRepoPublisher", () => {
     assert.equal(status.trim(), "");
   });
 
+  test("does not push distribution artifacts when downstream release fails", async () => {
+    const publisher = createPublisher();
+    publisher.repo.releaserc = ".releaserc.public.mjs";
+    publisher.repo.releaseConfigFiles = ["release-products.json"];
+    publisher.repo.files = [{ from: "bundle-latest.zip", to: null }];
+    publisher.releaseDistributionRepo = async () => {
+      throw new Error("downstream release failed");
+    };
+
+    await writeFile(
+      path.join(workDir, ".releaserc.public.mjs"),
+      "export default {};\n",
+    );
+    await writeFile(path.join(workDir, "release-products.json"), "{}\n");
+    await writeFile(path.join(workDir, "bundle-latest.zip"), "zip\n");
+    await publisher.cloneOrCheckout();
+    await git(publisher.dir, ["config", "user.email", "test@example.com"]);
+    await git(publisher.dir, ["config", "user.name", "Test"]);
+
+    await assert.rejects(
+      publisher.publish({ version: "1.0.0", type: "patch" }),
+      /downstream release failed/,
+    );
+
+    const verifyDir = path.join(workDir, "verify");
+    await execa("git", ["clone", remoteUrl, verifyDir]);
+    assert.ok(!existsSync(path.join(verifyDir, "bundle-latest.zip")));
+  });
+
   test("exposes nested release selectors while loading its config", async () => {
     const publisher = createPublisher();
     const original = process.env.RELEASE_REPOSITORY;
@@ -245,7 +274,7 @@ describe("whmcs-build DistributionRepoPublisher", () => {
     publisher.cloneOrCheckout = async () => {};
     publisher.copyReleaseConfig = async () => {};
     publisher.copyArtifacts = async () => {};
-    publisher.commitAndPush = async () => false;
+    publisher.commitChanges = async () => false;
     publisher.releaseDistributionRepo = async () => {
       released = true;
     };

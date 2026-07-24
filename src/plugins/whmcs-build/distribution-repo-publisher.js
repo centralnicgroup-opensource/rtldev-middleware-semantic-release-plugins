@@ -204,7 +204,7 @@ export default class DistributionRepoPublisher {
       .join("\n\n");
   }
 
-  async commitAndPush(message) {
+  async commitChanges(message) {
     const { stdout: status } = await this.git(["status", "--porcelain"]);
     if (!status.trim()) {
       this.logger.log("No changes to publish to the distribution repository.");
@@ -231,6 +231,10 @@ export default class DistributionRepoPublisher {
 
     await this.git(["commit", "-m", message]);
 
+    return true;
+  }
+
+  async pushChanges() {
     await this.withAuthenticatedRemote(async () => {
       // cloneOrCheckout() starts from the current remote branch. Push directly
       // so a concurrent update fails safely instead of creating a merge commit.
@@ -238,6 +242,11 @@ export default class DistributionRepoPublisher {
     });
     this.logger.log("Pushed release artifacts to the distribution repository.");
     return true;
+  }
+
+  async commitAndPush(message) {
+    const committed = await this.commitChanges(message);
+    return committed ? this.pushChanges() : false;
   }
 
   async withProcessEnv(values, work) {
@@ -314,9 +323,14 @@ export default class DistributionRepoPublisher {
       await this.copyReleaseConfig();
       await this.copyReleaseConfigFiles();
       await this.copyArtifacts();
-      const pushed = await this.commitAndPush(this.commitMessage(nextRelease));
-      if (pushed) {
+      const committed = await this.commitChanges(
+        this.commitMessage(nextRelease),
+      );
+      if (committed && this.repo.runSemanticRelease) {
         await this.releaseDistributionRepo(nextRelease);
+      }
+      if (committed) {
+        await this.pushChanges();
       }
     } finally {
       for (const file of this.transientConfigFiles) {
