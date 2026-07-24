@@ -75,6 +75,14 @@ describe("whmcs-build DistributionRepoPublisher", () => {
       publisher.commitMessage({ type: "major", version: "6.0.0" }),
       "feat(ibs-moniker): publish 6.0.0\n\nBREAKING CHANGE: publish the new major distribution version.",
     );
+    assert.equal(
+      publisher.commitMessage({
+        type: "patch",
+        version: "1.2.3",
+        notes: "# 1.2.3\n\n" + "a".repeat(1_000_000),
+      }),
+      "fix(ibs-moniker): publish 1.2.3",
+    );
   });
 
   test("clones the repository when no local checkout exists", async () => {

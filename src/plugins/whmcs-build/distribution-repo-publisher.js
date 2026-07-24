@@ -199,9 +199,11 @@ export default class DistributionRepoPublisher {
       nextRelease.type === "major"
         ? "BREAKING CHANGE: publish the new major distribution version."
         : "";
-    return [title, nextRelease.notes || "", footer]
-      .filter(Boolean)
-      .join("\n\n");
+    // Keep the generated distribution commit small. The full release notes
+    // are already published by the nested semantic-release; embedding them in
+    // `git commit -m` can exceed the OS argument limit for a first release or
+    // a long-lived repository and fail with E2BIG.
+    return [title, footer].filter(Boolean).join("\n\n");
   }
 
   async commitChanges(message) {
