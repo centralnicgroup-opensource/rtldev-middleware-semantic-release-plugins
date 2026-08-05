@@ -36,8 +36,8 @@
     "test": "node --env-file-if-exists=.env --test 'test/**/*.test.js'",
     "test:coverage": "node --env-file-if-exists=.env --test 'test/**/*.test.js' --experimental-test-coverage --test-coverage-include='src/**/*.js' --test-coverage-exclude='test/**/*.js'",
     "test:teams": "node --env-file-if-exists=.env --test test/plugins/notify/teams-notification.integration.js",
-    "lint": "prettier --check .",
-    "lint:fix": "prettier --write .",
+    "lint": "prettier --check ./src/**/*.js ./test/**/*.js",
+    "lint:fix": "prettier --write ./src/**/*.js ./test/**/*.js",
     "hooks:install": "git config core.hooksPath .githooks",
     "ci": "pnpm run build && pnpm run test:coverage && pnpm run lint",
     "prepare": "pnpm run hooks:install"
