@@ -27,9 +27,16 @@
   "publishConfig": {
     "access": "public"
   },
-  "packageManager": "pnpm@10.24.0",
   "engines": {
-    "node": "^22.14.0 || >=24.10.0"
+    "node": "^24.15.0 || ^26.0.0",
+    "npm": ">=12.0.0"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^11.0.0",
+      "onFail": "error"
+    }
   },
   "scripts": {
     "build": "find src test -name '*.js' -print0 2>/dev/null | xargs -0 -r -n1 node --check",

@@ -1,2 +1,5 @@
-onlyBuiltDependencies:
-  - skia-canvas
+allowBuilds:
+  # skia-canvas' postinstall fetches its native binary, so it has to run. This was
+  # `onlyBuiltDependencies` until pnpm 11 replaced that field with `allowBuilds`
+  # and left a placeholder here for a human to answer. (RSRMID-3008)
+  skia-canvas: true
