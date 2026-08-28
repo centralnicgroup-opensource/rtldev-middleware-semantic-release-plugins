@@ -71,11 +71,19 @@ export default class WhmcsBuildPlugin extends SemanticReleasePlugin {
           cfg.distributionRepo && !cfg.distributionRepo.url
             ? "DistributionRepoUrlRequired"
             : null,
+        (cfg) =>
+          cfg.distributionRepo &&
+          cfg.distributionRepo.url &&
+          cfg.distributionRepo.sshKeyEnv &&
+          cfg.distributionRepo.url.startsWith("https://")
+            ? "DistributionRepoUrlMustUseSsh"
+            : null,
       ]),
     );
   }
 
   async afterVerify(config, _pluginConfig, context) {
+    const env = getContextEnv(context);
     for (const build of this.configs(config)) {
       if (
         build.encrypt &&
@@ -84,11 +92,19 @@ export default class WhmcsBuildPlugin extends SemanticReleasePlugin {
         throw getError("EncoderNotFound");
       }
 
-      if (
-        build.distributionRepo &&
-        !getContextEnv(context)[build.distributionRepo.tokenEnv]
-      ) {
-        throw getError("NoDistributionRepoToken");
+      if (build.distributionRepo) {
+        const { sshKeyEnv, tokenEnv, runSemanticRelease } =
+          build.distributionRepo;
+        // A deploy key (sshKeyEnv) covers git push; the nested semantic-release
+        // run still calls the GitHub API to create a release, which only a
+        // token can do — so tokenEnv is required whenever that run happens,
+        // and otherwise only when there's no SSH key to push with instead.
+        if ((!sshKeyEnv || runSemanticRelease) && !env[tokenEnv]) {
+          throw getError("NoDistributionRepoToken");
+        }
+        if (sshKeyEnv && !env[sshKeyEnv]) {
+          throw getError("NoDistributionRepoSshKey");
+        }
       }
 
       if (build.logoStamp) {

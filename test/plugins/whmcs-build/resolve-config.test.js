@@ -97,12 +97,25 @@ describe("whmcs-build resolve-config", () => {
       files: [],
       releaserc: ".releaserc.distribution.json",
       tokenEnv: "DISTRIBUTION_REPO_TOKEN",
+      sshKeyEnv: false,
       runSemanticRelease: true,
       releaseTarget: false,
       commitScope: "release",
       commitMessage: false,
       releaseConfigFiles: [],
     });
+  });
+
+  test("normalizes distributionRepo sshKeyEnv", () => {
+    const config = resolveConfig({
+      archiveFileName: "bundle",
+      distributionRepo: {
+        url: "git@github.com:acme/distribution.git",
+        sshKeyEnv: "DEPLOY_KEY_READY",
+      },
+    });
+
+    assert.equal(config.distributionRepo.sshKeyEnv, "DEPLOY_KEY_READY");
   });
 
   test("normalizes logoStamp options with defaults", () => {
