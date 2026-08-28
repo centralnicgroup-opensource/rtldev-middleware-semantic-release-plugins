@@ -62,6 +62,22 @@ export function NoDistributionRepoToken() {
   };
 }
 
+export function NoDistributionRepoSshKey() {
+  return {
+    message: "No SSH key found for the distribution repository.",
+    details:
+      "`distributionRepo.sshKeyEnv` is configured but the named environment variable is not set. It must name the variable a prior step used to install the deploy key (e.g. into `~/.ssh`), not carry the key itself.",
+  };
+}
+
+export function DistributionRepoUrlMustUseSsh() {
+  return {
+    message: "The distribution repository URL must use the SSH form.",
+    details:
+      "`distributionRepo.sshKeyEnv` is configured, so `distributionRepo.url` must be an SSH URL (e.g. `git@github.com:owner/repo.git`) rather than an `https://` URL — git needs the SSH form to pick up the deploy key.",
+  };
+}
+
 export function SkiaCanvasMissing() {
   return {
     message: "The optional `skia-canvas` dependency is not installed.",

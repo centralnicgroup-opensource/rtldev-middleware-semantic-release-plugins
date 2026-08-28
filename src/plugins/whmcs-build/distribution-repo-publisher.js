@@ -36,7 +36,17 @@ export default class DistributionRepoPublisher {
     return token;
   }
 
+  get usesSsh() {
+    return Boolean(this.repo.sshKeyEnv);
+  }
+
   get authenticatedUrl() {
+    // An SSH deploy key authenticates at the transport level, so the URL
+    // carries no secret to embed — the key and known_hosts are assumed
+    // already configured on this machine (see resolveConfig's sshKeyEnv).
+    if (this.usesSsh) {
+      return this.repo.url;
+    }
     return this.repo.url.replace(
       "https://github.com/",
       `https://${encodeURIComponent(this.token)}@github.com/`,

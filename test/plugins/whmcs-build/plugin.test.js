@@ -118,6 +118,66 @@ describe("whmcs-build plugin", () => {
       );
     });
 
+    test("fails when an ssh-configured distributionRepo keeps an https url", async () => {
+      await assertVerifyFailsWith(
+        {
+          archiveFileName: "bundle",
+          distributionRepo: {
+            url: "https://github.com/acme/distribution.git",
+            sshKeyEnv: "DEPLOY_KEY_READY",
+            runSemanticRelease: false,
+          },
+        },
+        createContext({ cwd: fixtureDir, env: { DEPLOY_KEY_READY: "1" } }),
+        "DistributionRepoUrlMustUseSsh",
+      );
+    });
+
+    test("fails when the configured ssh key env var is unset", async () => {
+      await assertVerifyFailsWith(
+        {
+          archiveFileName: "bundle",
+          distributionRepo: {
+            url: "git@github.com:acme/distribution.git",
+            sshKeyEnv: "DEPLOY_KEY_READY",
+            runSemanticRelease: false,
+          },
+        },
+        createContext({ cwd: fixtureDir }),
+        "NoDistributionRepoSshKey",
+      );
+    });
+
+    test("passes on an ssh-configured distributionRepo without a token, when semantic-release is disabled", async () => {
+      const plugin = new WhmcsBuildPlugin();
+      await plugin.verifyConditions(
+        {
+          archiveFileName: "bundle",
+          distributionRepo: {
+            url: "git@github.com:acme/distribution.git",
+            sshKeyEnv: "DEPLOY_KEY_READY",
+            runSemanticRelease: false,
+          },
+        },
+        createContext({ cwd: fixtureDir, env: { DEPLOY_KEY_READY: "1" } }),
+      );
+      assert.equal(plugin.verified, true);
+    });
+
+    test("still requires a token on an ssh-configured distributionRepo when semantic-release runs", async () => {
+      await assertVerifyFailsWith(
+        {
+          archiveFileName: "bundle",
+          distributionRepo: {
+            url: "git@github.com:acme/distribution.git",
+            sshKeyEnv: "DEPLOY_KEY_READY",
+          },
+        },
+        createContext({ cwd: fixtureDir, env: { DEPLOY_KEY_READY: "1" } }),
+        "NoDistributionRepoToken",
+      );
+    });
+
     test("passes with a minimal valid configuration", async () => {
       const plugin = new WhmcsBuildPlugin();
       await plugin.verifyConditions(

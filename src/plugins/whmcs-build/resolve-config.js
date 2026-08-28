@@ -128,6 +128,14 @@ function normalizeDistributionRepo(distributionRepo) {
     ),
     releaserc: distributionRepo.releaserc || ".releaserc.distribution.json",
     tokenEnv: distributionRepo.tokenEnv || "DISTRIBUTION_REPO_TOKEN",
+    // When set, git clone/fetch/push use `url` as-is over SSH instead of
+    // rewriting it to an HTTPS+token URL — the SSH key and known_hosts are
+    // expected to already be configured on the machine (e.g. a workflow step
+    // ahead of the release), same as tokenEnv is expected to name an
+    // already-set environment variable. `tokenEnv` still gates the nested
+    // semantic-release run's GitHub API calls when `runSemanticRelease` is
+    // enabled — a deploy key can push commits but can't create a release.
+    sshKeyEnv: distributionRepo.sshKeyEnv || false,
     runSemanticRelease: distributionRepo.runSemanticRelease !== false,
     releaseTarget: distributionRepo.releaseTarget || false,
     commitScope: distributionRepo.commitScope || "release",

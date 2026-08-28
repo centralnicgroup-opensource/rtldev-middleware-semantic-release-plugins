@@ -177,6 +177,40 @@ describe("whmcs-build DistributionRepoPublisher", () => {
     assert.equal(origin, remoteUrl);
   });
 
+  test("pushes over ssh without a distribution token when sshKeyEnv is configured", async () => {
+    // No DISTRIBUTION_REPO_TOKEN in env — the token getter would throw if
+    // it were ever accessed, which is exactly what sshKeyEnv should avoid.
+    const env = { DEPLOY_KEY_READY: "1" };
+    const config = resolveConfig(
+      {
+        archiveFileName: "bundle",
+        distributionRepo: {
+          url: remoteUrl,
+          dir: "checkout",
+          sshKeyEnv: "DEPLOY_KEY_READY",
+          runSemanticRelease: false,
+        },
+      },
+      { cwd: workDir, env },
+    );
+    const publisher = new DistributionRepoPublisher(config, { logger, env });
+
+    assert.equal(publisher.authenticatedUrl, remoteUrl);
+
+    await publisher.cloneOrCheckout();
+    await git(publisher.dir, ["config", "user.email", "test@example.com"]);
+    await git(publisher.dir, ["config", "user.name", "Test"]);
+    await writeFile(path.join(publisher.dir, "release.txt"), "release");
+
+    assert.equal(await publisher.commitAndPush("fix: release"), true);
+    const { stdout: origin } = await git(publisher.dir, [
+      "remote",
+      "get-url",
+      "origin",
+    ]);
+    assert.equal(origin, remoteUrl);
+  });
+
   test("copies release support files beside the downstream config", async () => {
     const publisher = createPublisher();
     await publisher.cloneOrCheckout();
