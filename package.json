@@ -62,12 +62,20 @@
     "replace-in-file": "^9.0.0"
   },
   "peerDependencies": {
+    "@semantic-release/release-notes-generator": ">=14",
+    "conventional-changelog-angular": ">=8",
     "prettier": ">=3",
     "puppeteer": ">=25",
     "semantic-release": ">=24",
     "skia-canvas": ">=1"
   },
   "peerDependenciesMeta": {
+    "@semantic-release/release-notes-generator": {
+      "optional": true
+    },
+    "conventional-changelog-angular": {
+      "optional": true
+    },
     "prettier": {
       "optional": true
     },

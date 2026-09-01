@@ -12,6 +12,7 @@ import { resolveFiles } from "./files.js";
 import getError from "./get-error.js";
 import DistributionRepoPublisher from "./distribution-repo-publisher.js";
 import IonCubeEncoder from "./ioncube-encoder.js";
+import { renderReleaseNotes, validateReleaseNotes } from "./notes/render.js";
 import stampVersionOnLogo from "./logo-stamper.js";
 import resolveConfig from "./resolve-config.js";
 
@@ -47,38 +48,57 @@ export default class WhmcsBuildPlugin extends SemanticReleasePlugin {
     return resolveConfig(pluginConfig, context);
   }
 
+  /**
+   * Release notes for the bundle, rendered from the commits through the scope
+   * catalogue in `releaseNotes`. Without that option the hook returns nothing
+   * and semantic-release keeps whatever other plugins generated.
+   */
+  async generateNotes(pluginConfig, context) {
+    const config = await this.resolveConfig(pluginConfig, context);
+
+    return config.releaseNotes
+      ? renderReleaseNotes(config.releaseNotes, context)
+      : "";
+  }
+
   validateConfig(config) {
-    return this.configs(config).flatMap((build) =>
-      runConfigValidators(build, [
-        validateRequiredConfig("archiveFileName", "ArchiveFileNameRequired"),
-        (cfg) =>
-          cfg.composer && !cfg.composer.script
-            ? "ComposerScriptRequired"
-            : null,
-        (cfg) =>
-          cfg.encrypt && !cfg.encrypt.encoderPath
-            ? "EncoderPathRequired"
-            : null,
-        (cfg) =>
-          cfg.encrypt && !cfg.encrypt.commands.length
-            ? "EncoderCommandsRequired"
-            : null,
-        (cfg) =>
-          cfg.beforeBuild && !cfg.beforeBuild.command
-            ? "BeforeBuildCommandRequired"
-            : null,
-        (cfg) =>
-          cfg.distributionRepo && !cfg.distributionRepo.url
-            ? "DistributionRepoUrlRequired"
-            : null,
-        (cfg) =>
-          cfg.distributionRepo &&
-          cfg.distributionRepo.url &&
-          cfg.distributionRepo.sshKeyEnv &&
-          cfg.distributionRepo.url.startsWith("https://")
-            ? "DistributionRepoUrlMustUseSsh"
-            : null,
-      ]),
+    const notesErrors = config.releaseNotes
+      ? validateReleaseNotes(config.releaseNotes)
+      : [];
+
+    return notesErrors.concat(
+      this.configs(config).flatMap((build) =>
+        runConfigValidators(build, [
+          validateRequiredConfig("archiveFileName", "ArchiveFileNameRequired"),
+          (cfg) =>
+            cfg.composer && !cfg.composer.script
+              ? "ComposerScriptRequired"
+              : null,
+          (cfg) =>
+            cfg.encrypt && !cfg.encrypt.encoderPath
+              ? "EncoderPathRequired"
+              : null,
+          (cfg) =>
+            cfg.encrypt && !cfg.encrypt.commands.length
+              ? "EncoderCommandsRequired"
+              : null,
+          (cfg) =>
+            cfg.beforeBuild && !cfg.beforeBuild.command
+              ? "BeforeBuildCommandRequired"
+              : null,
+          (cfg) =>
+            cfg.distributionRepo && !cfg.distributionRepo.url
+              ? "DistributionRepoUrlRequired"
+              : null,
+          (cfg) =>
+            cfg.distributionRepo &&
+            cfg.distributionRepo.url &&
+            cfg.distributionRepo.sshKeyEnv &&
+            cfg.distributionRepo.url.startsWith("https://")
+              ? "DistributionRepoUrlMustUseSsh"
+              : null,
+        ]),
+      ),
     );
   }
 

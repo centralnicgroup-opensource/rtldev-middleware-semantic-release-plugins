@@ -4,9 +4,13 @@ import path from "node:path";
 import { execa } from "execa";
 import { getContextEnv, stripInternalReleaseLinks } from "../../core/index.js";
 import { resolveFiles } from "./files.js";
+import { renderReleaseNotes } from "./notes/render.js";
 import getError from "./get-error.js";
 
 const COMMIT_TYPES = { major: "feat", minor: "feat", patch: "fix" };
+
+/** Audience names `distributionRepo.notes` accepts instead of a fixed string. */
+const AUDIENCES = ["customer", "internal", "all"];
 
 /**
  * Publishes release artifacts to a downstream distribution repository: clone
@@ -17,6 +21,7 @@ export default class DistributionRepoPublisher {
   constructor(config, context) {
     this.config = config;
     this.repo = config.distributionRepo;
+    this.context = context;
     this.logger = context.logger || console;
     this.env = getContextEnv(context);
     this.cwd = config.cwd;
@@ -291,6 +296,26 @@ export default class DistributionRepoPublisher {
     }
   }
 
+  /**
+   * The notes the distribution repository publishes. `distributionRepo.notes`
+   * takes an audience name - "customer" renders a cut without internal work and
+   * without commit links, which point at a repository its readers cannot reach -
+   * or a fixed string. Unset, the source release's own notes are republished.
+   */
+  async resolveDistributionNotes(nextRelease = {}) {
+    const { notes } = this.repo;
+
+    if (notes && this.config.releaseNotes && AUDIENCES.includes(notes)) {
+      return renderReleaseNotes(
+        this.config.releaseNotes,
+        { ...this.context, nextRelease },
+        { audience: notes },
+      );
+    }
+
+    return notes || nextRelease.notes || "";
+  }
+
   async releaseDistributionRepo(nextRelease = {}) {
     if (!this.repo.runSemanticRelease) {
       return;
@@ -303,7 +328,7 @@ export default class DistributionRepoPublisher {
 
     const releaseEnv = {
       ...this.env,
-      customReleaseNotes: nextRelease.notes || "",
+      customReleaseNotes: await this.resolveDistributionNotes(nextRelease),
       ...(this.repo.releaseTarget
         ? { RELEASE_TARGET: this.repo.releaseTarget }
         : {}),

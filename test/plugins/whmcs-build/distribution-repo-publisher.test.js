@@ -32,6 +32,73 @@ async function seedRepoFromRemote(cwd, remoteUrl) {
 }
 
 describe("whmcs-build DistributionRepoPublisher", () => {
+  describe("distribution notes", () => {
+    const publisherWith = (notes) =>
+      new DistributionRepoPublisher(
+        resolveConfig({
+          archiveFileName: "bundle",
+          distributionRepo: { url: "https://github.com/acme/dist.git", notes },
+        }),
+        { logger, env: {} },
+      );
+
+    test("republishes the private release's notes when none are configured", async () => {
+      const publisher = publisherWith(undefined);
+
+      assert.equal(
+        await publisher.resolveDistributionNotes({ notes: "private notes" }),
+        "private notes",
+      );
+    });
+
+    test("prefers a configured fixed string", async () => {
+      assert.equal(
+        await publisherWith("fixed notes").resolveDistributionNotes({
+          notes: "private notes",
+        }),
+        "fixed notes",
+      );
+    });
+
+    test("renders the named audience when a catalogue is configured", async () => {
+      const publisher = new DistributionRepoPublisher(
+        resolveConfig({
+          archiveFileName: "bundle",
+          distributionRepo: {
+            url: "https://github.com/acme/dist.git",
+            notes: "customer",
+          },
+          releaseNotes: {
+            scopes: [
+              { scope: "search", label: "Search", audience: "customer" },
+              { scope: "deps", label: "Dependencies", audience: "internal" },
+            ],
+          },
+        }),
+        {
+          logger,
+          env: {},
+          options: { repositoryUrl: "https://github.com/acme/dist" },
+          lastRelease: { gitTag: "v1.0.0" },
+          commits: [
+            { hash: "a".repeat(40), message: "fix(search): find things" },
+            { hash: "b".repeat(40), message: "fix(deps): bump a library" },
+          ],
+        },
+      );
+
+      const notes = await publisher.resolveDistributionNotes({
+        version: "1.1.0",
+        gitTag: "v1.1.0",
+        notes: "private notes",
+      });
+
+      assert.match(notes, /\*\*Search:\*\* find things/);
+      assert.doesNotMatch(notes, /Dependencies/);
+      assert.doesNotMatch(notes, /commit\//);
+    });
+  });
+
   let workDir;
   let remoteUrl;
 
