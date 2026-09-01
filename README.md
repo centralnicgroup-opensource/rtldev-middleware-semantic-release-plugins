@@ -5,7 +5,7 @@
 [![license](https://img.shields.io/npm/l/@team-internet/semantic-release-plugins.svg)](LICENSE)
 [![node](https://img.shields.io/node/v/@team-internet/semantic-release-plugins.svg)](package.json)
 
-A collection of reusable [semantic-release](https://github.com/semantic-release/semantic-release) plugins for common release pipeline tasks: updating files with the next version, sending Microsoft Teams notifications, overriding release notes, publishing Maven projects, and building/publishing WHMCS module bundles.
+A collection of reusable [semantic-release](https://github.com/semantic-release/semantic-release) plugins for common release pipeline tasks: updating files with the next version, sending Microsoft Teams notifications, overriding release notes, publishing Maven projects, building/publishing WHMCS module bundles, and publishing product versions to the WHMCS Marketplace.
 
 ---
 
@@ -21,13 +21,14 @@ A collection of reusable [semantic-release](https://github.com/semantic-release/
   - [notes-override](#notes-override)
   - [maven](#maven)
   - [whmcs-build](#whmcs-build)
+  - [whmcs-marketplace](#whmcs-marketplace)
 - [Debugging](#debugging)
 
 ---
 
 ## Requirements
 
-- Node.js `^22.14.0 || >=24.10.0`
+- Node.js `^24.15.0 || ^26.0.0`
 - semantic-release `25` or compatible
 
 ---
@@ -49,16 +50,20 @@ yarn add --dev @team-internet/semantic-release-plugins
 
 ## Available Plugins
 
-| Plugin           | Subpath                                                  | Lifecycle hooks                                     |
-| ---------------- | -------------------------------------------------------- | --------------------------------------------------- |
-| `replace`        | `@team-internet/semantic-release-plugins/replace`        | `prepare`                                           |
-| `notify`         | `@team-internet/semantic-release-plugins/notify`         | `verifyConditions`, `success`                       |
-| `teams-notify`   | `@team-internet/semantic-release-plugins/teams-notify`   | `verifyConditions`, `success`                       |
-| `notes-override` | `@team-internet/semantic-release-plugins/notes-override` | `verifyConditions`, `generateNotes`                 |
-| `maven`          | `@team-internet/semantic-release-plugins/maven`          | `verifyConditions`, `prepare`, `publish`, `success` |
-| `whmcs-build`    | `@team-internet/semantic-release-plugins/whmcs-build`    | `verifyConditions`, `prepare`, `publish`            |
+| Plugin              | Subpath                                                     | Lifecycle hooks                                     |
+| ------------------- | ----------------------------------------------------------- | --------------------------------------------------- |
+| `replace`           | `@team-internet/semantic-release-plugins/replace`           | `prepare`                                           |
+| `notify`            | `@team-internet/semantic-release-plugins/notify`            | `verifyConditions`, `success`                       |
+| `teams-notify`      | `@team-internet/semantic-release-plugins/teams-notify`      | `verifyConditions`, `success`                       |
+| `notes-override`    | `@team-internet/semantic-release-plugins/notes-override`    | `verifyConditions`, `generateNotes`                 |
+| `maven`             | `@team-internet/semantic-release-plugins/maven`             | `verifyConditions`, `prepare`, `publish`, `success` |
+| `whmcs-build`       | `@team-internet/semantic-release-plugins/whmcs-build`       | `verifyConditions`, `prepare`, `publish`            |
+| `whmcs-marketplace` | `@team-internet/semantic-release-plugins/whmcs-marketplace` | `verifyConditions`, `publish`, `fail`               |
 
 `teams-notify` is an alias for `notify`.
+
+`whmcs-marketplace` needs the optional [`puppeteer`](https://pptr.dev) peer dependency
+(`pnpm add -D puppeteer`) and a browser; no other plugin pulls either.
 
 ---
 
@@ -332,26 +337,107 @@ entries can rename them when they are published.
 
 **`distributionRepo` fields:**
 
-| Field                | Default                        | Description                                                                                                                                                                                                                                                                                                    |
-| -------------------- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `url`                | required                       | Git URL of the downstream repository to publish to.                                                                                                                                                                                                                                                            |
-| `dir`                | `distribution-repo`            | Local directory the repository is cloned into.                                                                                                                                                                                                                                                                 |
-| `branch`             | `main`                         | Branch to check out, commit to, and push.                                                                                                                                                                                                                                                                      |
-| `files`              | `[]`                           | Artifacts to copy into the distribution repository. Each entry is a glob string (copied as-is), or a `{ "from": "<glob>", "to": "<path>" }` pair that renames the matched file (e.g. dropping a `-latest` suffix). The `archiveBuildPath` prefix is stripped from every target so files land at the repo root. |
-| `releaserc`          | `.releaserc.distribution.json` | semantic-release config copied temporarily into the distribution checkout while preserving its `.json`, `.js`, `.cjs`, or `.mjs` extension. It is removed after the downstream release and is not committed.                                                                                                   |
-| `tokenEnv`           | `DISTRIBUTION_REPO_TOKEN`      | Environment variable holding a GitHub token. Required for push access unless `sshKeyEnv` is set; always required when `runSemanticRelease` is enabled, since creating the downstream GitHub release still needs the API.                                                                                       |
-| `sshKeyEnv`          | `false`                        | Environment variable that must be set by a prior step which already installed an SSH deploy key (e.g. into `~/.ssh`) with push access. When set, git clone/fetch/push use `url` as-is over SSH instead of an HTTPS+token URL — `url` must then use the SSH form (`git@github.com:owner/repo.git`). This variable only gates verification; the plugin never reads or writes the key itself.                  |
-| `runSemanticRelease` | `true`                         | Run a nested semantic-release inside the distribution repository before pushing the distribution branch.                                                                                                                                                                                                       |
-| `releaseTarget`      | `false`                        | Optional `RELEASE_TARGET` value passed to the downstream semantic-release process when one config contains multiple independent release streams.                                                                                                                                                               |
-| `commitScope`        | `release`                      | Conventional Commit scope used for the generated distribution commit. Give each independently versioned product its own scope when sharing a distribution repository.                                                                                                                                          |
-| `commitMessage`      | `false`                        | Custom commit message template (`${version}`, `${type}`, `${notes}`); defaults to a conventional commit with the configured scope and the source release type.                                                                                                                                                 |
-| `releaseConfigFiles` | `[]`                           | JSON or other support files copied temporarily beside the release config before nested semantic-release runs. They are removed afterward and are not committed to the distribution repository.                                                                                                                 |
+| Field                | Default                        | Description                                                                                                                                                                                                                                                                                                                                                                                |
+| -------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `url`                | required                       | Git URL of the downstream repository to publish to.                                                                                                                                                                                                                                                                                                                                        |
+| `dir`                | `distribution-repo`            | Local directory the repository is cloned into.                                                                                                                                                                                                                                                                                                                                             |
+| `branch`             | `main`                         | Branch to check out, commit to, and push.                                                                                                                                                                                                                                                                                                                                                  |
+| `files`              | `[]`                           | Artifacts to copy into the distribution repository. Each entry is a glob string (copied as-is), or a `{ "from": "<glob>", "to": "<path>" }` pair that renames the matched file (e.g. dropping a `-latest` suffix). The `archiveBuildPath` prefix is stripped from every target so files land at the repo root.                                                                             |
+| `releaserc`          | `.releaserc.distribution.json` | semantic-release config copied temporarily into the distribution checkout while preserving its `.json`, `.js`, `.cjs`, or `.mjs` extension. It is removed after the downstream release and is not committed.                                                                                                                                                                               |
+| `tokenEnv`           | `DISTRIBUTION_REPO_TOKEN`      | Environment variable holding a GitHub token. Required for push access unless `sshKeyEnv` is set; always required when `runSemanticRelease` is enabled, since creating the downstream GitHub release still needs the API.                                                                                                                                                                   |
+| `sshKeyEnv`          | `false`                        | Environment variable that must be set by a prior step which already installed an SSH deploy key (e.g. into `~/.ssh`) with push access. When set, git clone/fetch/push use `url` as-is over SSH instead of an HTTPS+token URL — `url` must then use the SSH form (`git@github.com:owner/repo.git`). This variable only gates verification; the plugin never reads or writes the key itself. |
+| `runSemanticRelease` | `true`                         | Run a nested semantic-release inside the distribution repository before pushing the distribution branch.                                                                                                                                                                                                                                                                                   |
+| `releaseTarget`      | `false`                        | Optional `RELEASE_TARGET` value passed to the downstream semantic-release process when one config contains multiple independent release streams.                                                                                                                                                                                                                                           |
+| `commitScope`        | `release`                      | Conventional Commit scope used for the generated distribution commit. Give each independently versioned product its own scope when sharing a distribution repository.                                                                                                                                                                                                                      |
+| `commitMessage`      | `false`                        | Custom commit message template (`${version}`, `${type}`, `${notes}`); defaults to a conventional commit with the configured scope and the source release type.                                                                                                                                                                                                                             |
+| `releaseConfigFiles` | `[]`                           | JSON or other support files copied temporarily beside the release config before nested semantic-release runs. They are removed afterward and are not committed to the distribution repository.                                                                                                                                                                                             |
 
 The building blocks (`BundleBuilder`, `IonCubeEncoder`, `DistributionRepoPublisher`) are exported from the subpath for local builds and development helpers. Additional exports support that use case:
 
 - **`WhmcsBuildPlugin.build(pluginConfig, options)`** — builds the bundle only (no publish), constructing the context from plain options (`version`, `type`, `notes`, `repositoryUrl`, `cwd`, `env`, `logger`) so callers never build a context themselves.
 - **`createStandaloneContext(options)`** — the context builder used by local helpers that need a semantic-release-shaped context.
 - **`resolveFiles(patterns, { cwd })`** and **`cleanupPaths(paths, { cwd, logger })`** — the glob-resolving and directory-removal helpers the plugin uses internally, exported for consumers that want the same file-handling behavior in their own scripts.
+
+### `whmcs-marketplace`
+
+Publishes a product version to the [WHMCS Marketplace](https://marketplace.whmcs.com), including its changelog. The Marketplace has no publishing API, so the plugin drives a real browser through the listing forms with [Puppeteer](https://pptr.dev).
+
+- **`verifyConditions`** — validates the credentials and product id, and checks that the optional `puppeteer` peer dependency and the cookie-banner extension are present.
+- **`prepare`** — installs the browser the publish will drive, and Chrome's OS libraries with it on Debian-like systems. This is a release hook rather than a step in your CI job on purpose: semantic-release does not run `prepare` when no version is due, so a push of nothing but dependency bumps never pays for the download.
+- **`publish`** — logs in, submits the new version with today's release date and the release notes (markdown links stripped, which the Marketplace rejects), then ticks the compatible WHMCS versions on the same session.
+- **`fail`** — reports whether the version reached the Marketplace before another plugin failed the release, so it is clear whether the listing needs cleaning up.
+
+A failed marketplace publish is reported and returns no release rather than failing the release: the version is already tagged and published everywhere else, and the listing is corrected by re-running the publish.
+
+```json
+[
+  "@team-internet/semantic-release-plugins/whmcs-marketplace",
+  {
+    "minVersion": "8.0",
+    "setCompatibleVersions": true
+  }
+]
+```
+
+Everything can also be configured through the environment, which takes precedence over the plugin options:
+
+| Variable                    | Required | Description                                                           |
+| --------------------------- | -------- | --------------------------------------------------------------------- |
+| `WHMCSMP_LOGIN`             | yes      | Marketplace account with access to the product                        |
+| `WHMCSMP_PASSWORD`          | yes      | Marketplace account password                                          |
+| `WHMCSMP_PRODUCTID`         | yes      | Product id, as found in the URL of the product page                   |
+| `WHMCSMP_MINVERSION`        | no       | Lowest compatible WHMCS version (default `7.10`)                      |
+| `WHMCSMP_URL`               | no       | Marketplace base URL (default `https://marketplace.whmcs.com`)        |
+| `PUPPETEER_EXECUTABLE_PATH` | no       | Browser to drive, instead of letting the plugin find one              |
+| `PUPPETEER_CACHE_DIR`       | no       | Where to look for an installed browser                                |
+| `PUPPETEER_HEADLESS`        | no       | Set to `0` to watch the browser work                                  |
+| `PUPPETEER_KEEP_OPEN`       | no       | Set to `1` to keep the browser open for a minute after a failure      |
+| `USE_COOKIE_EXTENSION`      | no       | Set to `0` to launch without the cookie-banner extension              |
+| `GH_TOKEN` / `GITHUB_TOKEN` | no       | Only for `syncVersions`, which reads the repository's GitHub releases |
+| `GH_REPO` / `GITHUB_REPO`   | no       | Only for `syncVersions`, as `owner/repo`                              |
+
+#### The browser
+
+The plugin provisions its own browser in `prepare`, through the installed `puppeteer` — nothing needs to install one for it:
+
+| Option / variable                            | Default | Description                                                                                 |
+| -------------------------------------------- | ------- | ------------------------------------------------------------------------------------------- |
+| `installBrowser` / `WHMCSMP_INSTALL_BROWSER` | `true`  | Install a browser in `prepare` when there is not one already                                |
+| `skipOsDeps` / `WHMCSMP_SKIP_OS_DEPS`        | `false` | Skip Chrome's OS libraries, for an image that already carries them                          |
+| `browserInstallCommand`                      | —       | Replace the install command entirely, for a machine that provisions browsers some other way |
+
+It is idempotent: an existing browser — one already in `PUPPETEER_CACHE_DIR`, one `PUPPETEER_EXECUTABLE_PATH` points at, or one in the user's own puppeteer cache — is used as it is. Installing OS libraries uses `apt` and so needs `sudo`; the cache directory is passed through explicitly, since `sudo` would otherwise resolve it against root's home.
+
+A browser that cannot be installed is reported and the release continues — `publish` then adds no release rather than stopping one that is otherwise complete. With `installBrowser: false` the browser becomes your job, and `verifyConditions` fails fast with `ChromeNotFound` when it is missing.
+
+The same installer is available on its own, which is what the devcontainer and CI use:
+
+```sh
+pnpm run browser:install
+```
+
+#### Testing against the Marketplace
+
+Two integration tests cover the browser side, since a Marketplace HTML change is otherwise first discovered by a release:
+
+- `pnpm run test:browser` — needs a browser but **no credentials**. Launches Chrome with the bundled extension, checks the extension actually loaded, and checks the live login form still has the selectors the plugin types into with nothing covering its submit button. Nothing is published.
+- `pnpm run test:whmcs` — needs credentials. Publishes a throwaway version to the product you point it at, checks it is listed, and removes it again.
+
+#### Marketplace maintenance operations
+
+The subpath also exports operations that are not release hooks, for a project's own CLI. They take the same `(pluginConfig, context)` arguments and verify the configuration first:
+
+- **`syncVersions`** — publishes every GitHub release missing from the listing, oldest first. Needs `GH_TOKEN` and `GH_REPO`.
+- **`deleteVersion`** — removes `context.version` from the listing.
+- **`updateCompatibility`** — ticks the compatible WHMCS versions without publishing anything.
+- **`marketplaceVersions`** — lists the versions currently published, oldest first.
+- **`githubReleases`** — lists the repository's GitHub releases, oldest first.
+
+```js
+import { updateCompatibility } from "@team-internet/semantic-release-plugins/whmcs-marketplace";
+
+await updateCompatibility({}, { env: process.env, logger: console });
+```
 
 ---
 
@@ -363,11 +449,15 @@ Set the `DEBUG` environment variable to the plugin namespace to enable verbose l
 DEBUG=semantic-release:notify pnpm semantic-release
 DEBUG=semantic-release:teams-notify pnpm semantic-release
 DEBUG=semantic-release:notes-override pnpm semantic-release
+DEBUG=semantic-release:whmcs-build pnpm semantic-release
+DEBUG=semantic-release:whmcs-marketplace pnpm semantic-release
 ```
 
 Use `DEBUG=semantic-release:*` to enable all plugins simultaneously.
 
 For Maven build output, set `"debug": true` in the plugin options to pass `-X` to Maven.
+
+`whmcs-marketplace`'s browser flow is only observable through this log, so turn it on when a marketplace publish misbehaves — and add `PUPPETEER_HEADLESS=0` to watch it happen, or `PUPPETEER_KEEP_OPEN=1` to keep the browser up for a minute after a failure. Failures themselves are always reported, whether or not `DEBUG` is set: the plugin logs the Marketplace's own wording, so a rejected login reads as one rather than as "nothing was published".
 
 ---
 

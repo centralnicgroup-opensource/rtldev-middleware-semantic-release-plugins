@@ -2,3 +2,6 @@ node_modules
 coverage
 dist
 pnpm-lock.yaml
+
+# Vendored browser extension shipped with the whmcs-marketplace plugin
+src/plugins/*/extensions
