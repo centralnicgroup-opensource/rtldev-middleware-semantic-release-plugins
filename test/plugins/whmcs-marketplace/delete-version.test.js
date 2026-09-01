@@ -8,7 +8,8 @@ import {
   createFakeSession,
 } from "./fake-page.js";
 
-const CONFIRM_SELECTOR = "button.btn-styled-red";
+const CONFIRM_SELECTOR =
+  "button.btn-styled-red, input.btn-styled-red, .modal a.btn-styled-red";
 
 function createVersionRow(version, { label = "Delete", withCell = true } = {}) {
   const deleteButton = createFakeElement({ textContent: label });
@@ -24,14 +25,21 @@ function createVersionRow(version, { label = "Delete", withCell = true } = {}) {
   return row;
 }
 
-function createPage({ rows, alertResult = "success", rowsAfterDelete } = {}) {
+function createPage({
+  rows,
+  alertResult = "success",
+  rowsAfterDelete,
+  confirmation = true,
+} = {}) {
+  const confirmButton = confirmation ? createFakeElement() : undefined;
   const page = createFakePage({
     alertResult,
     elements: {
       tr: rows,
-      [CONFIRM_SELECTOR]: createFakeElement(),
+      ...(confirmButton ? { [CONFIRM_SELECTOR]: confirmButton } : {}),
     },
   });
+  page.confirmButton = confirmButton;
 
   if (rowsAfterDelete) {
     let deleted = false;
@@ -86,6 +94,44 @@ describe("whmcs-marketplace delete-version", () => {
 
       assert.equal(wanted.deleteButton.clicks, 1);
       assert.equal(other.deleteButton.clicks, 0);
+    });
+
+    test("waits for a confirmation that may be a button, input or link", async () => {
+      const page = createPage({ rows: [createVersionRow("1.2.3")] });
+
+      await removeVersion(createFakeSession({ page }), "1.2.3");
+
+      const waited = page.calls
+        .filter((call) => call.method === "waitForSelector")
+        .map((call) => call.args[0]);
+
+      assert.ok(waited.includes(CONFIRM_SELECTOR), waited.join(" | "));
+    });
+
+    test("accepts a delete that applies without a confirmation", async () => {
+      // Some paths delete on the first click; waiting for a confirmation that
+      // never appears used to fail the whole operation on a selector timeout.
+      const page = createPage({
+        rows: [createVersionRow("1.2.3")],
+        confirmation: false,
+        alertResult: "none",
+        rowsAfterDelete: [],
+      });
+
+      const result = await removeVersion(createFakeSession({ page }), "1.2.3");
+
+      assert.equal(result.name, "WHMCS Marketplace Product Version");
+    });
+
+    test("reports a missing confirmation that left the row in place", async () => {
+      const page = createPage({
+        rows: [createVersionRow("1.2.3")],
+        confirmation: false,
+        alertResult: "none",
+      });
+      const session = createFakeSession({ page });
+
+      assert.equal(await removeVersion(session, "1.2.3"), false);
     });
 
     test("returns false when the version is not listed", async () => {

@@ -7,7 +7,13 @@ import {
   waitForSubmitResult,
 } from "./page-utils.js";
 
-const CONFIRM_SELECTOR = "button.btn-styled-red";
+// The confirmation the Marketplace shows after clicking Delete is not always a
+// <button>: on some paths it is a link or a submit input carrying the same
+// class, and on others the delete applies straight away and nothing to confirm
+// ever appears. Match all three, and treat "no confirmation" as a normal
+// outcome - whether the version is gone is decided further down, not here.
+const CONFIRM_SELECTOR =
+  "button.btn-styled-red, input.btn-styled-red, .modal a.btn-styled-red";
 
 /** Finds the delete button in the table row of the given version. */
 async function findDeleteButton(page, version) {
@@ -84,11 +90,23 @@ export async function removeVersion(session, version) {
     );
   }
 
-  await clickAndWaitForResult(page, CONFIRM_SELECTOR, {
-    timeout: config.timeouts.navigation,
-    waitAfter: config.timeouts.settle,
-  });
-  await wait(config.timeouts.settle);
+  if (await versionIsGone(page, version)) {
+    debug("the version is already gone, no confirmation needed");
+  } else {
+    try {
+      await clickAndWaitForResult(page, CONFIRM_SELECTOR, {
+        timeout: config.timeouts.selector,
+        waitAfter: config.timeouts.settle,
+      });
+    } catch (error) {
+      // Waiting the full navigation timeout here used to fail the whole
+      // operation with a bare selector timeout, even when the delete had
+      // already applied. The checks below give a verdict either way.
+      debug("no confirmation control appeared: %s", error.message);
+    }
+
+    await wait(config.timeouts.settle);
+  }
 
   const result = await waitForSubmitResult(page, {
     timeout: config.timeouts.navigation,
