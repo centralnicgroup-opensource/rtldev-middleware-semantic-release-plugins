@@ -13,7 +13,7 @@ Semantic-release expects plugins to expose plain lifecycle hook functions such a
 - `validateRequiredConfig`, `validateUrlConfig`, and `runConfigValidators` for repeated config checks
 - `afterVerify` for plugins that need external checks during `verifyConditions`
 - context/env helpers
-- markdown release-note cleanup helpers
+- markdown release-note cleanup helpers (`stripMarkdownLinks`, `stripInternalReleaseLinks`)
 
 The package is ESM-first. Because this is a new canonical repository, it avoids compatibility adapters and keeps one implementation style.
 
@@ -75,6 +75,7 @@ This removes repeated lifecycle boilerplate from every plugin:
 - `@team-internet/semantic-release-plugins/maven` uses the base class and `afterVerify` for the Maven executable check.
 - `@team-internet/semantic-release-plugins/replace` is a focused prepare hook for file replacements.
 - `@team-internet/semantic-release-plugins/whmcs-build` uses the base class with `afterVerify` for encoder/token checks and delegates to small collaborator classes (`BundleBuilder`, `IonCubeEncoder`, `DistributionRepoPublisher`).
+- `@team-internet/semantic-release-plugins/whmcs-marketplace` uses the base class with `afterVerify` for the browser checks (optional `puppeteer` peer dependency, Chrome binary, cookie-banner extension). Its browser work is split so that nothing needing a browser is required to test it: `MarketplaceSession` owns launch, login and teardown, and each operation exposes a function taking an already authenticated session (`submitVersion`, `applyCompatibleVersions`, `removeVersion`, `readPublishedVersions`) alongside the `(config, context)` operation that opens one. Comparisons that would otherwise live inside a page-side closure — which cannot be unit tested — are pulled back into plain functions (`shouldCheckVersion`, `chromeCandidates`, `releaseVersion`).
 
 ## Recommended Next Refactors
 

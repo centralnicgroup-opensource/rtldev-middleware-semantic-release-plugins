@@ -2,12 +2,12 @@
 
 ## Project Overview
 
-This is a collection of reusable **semantic-release plugins** (`@team-internet/semantic-release-plugins`) maintained by Team Internet / CentralNic Group. It ships a `maven` publisher, a `notify`/`teams-notify` Microsoft Teams notifier, a `notes-override` release-notes replacer, a `replace` file-content updater, and an in-progress `whmcs-build` packaging plugin — each consumable independently via package subpath exports.
+This is a collection of reusable **semantic-release plugins** (`@team-internet/semantic-release-plugins`) maintained by Team Internet / CentralNic Group. It ships a `maven` publisher, a `notify`/`teams-notify` Microsoft Teams notifier, a `notes-override` release-notes replacer, a `replace` file-content updater, a `whmcs-build` module-bundle packager, and a `whmcs-marketplace` WHMCS Marketplace publisher — each consumable independently via package subpath exports.
 
 ## Architecture
 
-- **ESM only** (`"type": "module"`), Node.js `^22.14.0 || >=24.10.0`.
-- **Subpath exports:** each plugin is reachable both via the aggregate `src/index.js` (named exports: `maven`, `notesOverride`, `notify`, `replace`) and via its own `package.json#exports` subpath (e.g. `@team-internet/semantic-release-plugins/replace`). `teams-notify` is an alias subpath pointing at the same `notify` implementation. When adding a new plugin, wire both: a named export in `src/index.js` **and** a subpath entry in `package.json#exports`/`files`.
+- **ESM only** (`"type": "module"`), Node.js `^24.15.0 || ^26.0.0`. Keep the README's Requirements section in step with `engines`.
+- **Subpath exports:** each plugin is reachable both via the aggregate `src/index.js` (named exports: `maven`, `notesOverride`, `notify`, `replace`, `whmcsBuild`, `whmcsMarketplace`) and via its own `package.json#exports` subpath (e.g. `@team-internet/semantic-release-plugins/replace`). `teams-notify` is an alias subpath pointing at the same `notify` implementation. When adding a new plugin, wire both: a named export in `src/index.js` **and** a subpath entry in `package.json#exports`/`files`.
 - **Shared core (`src/core/index.js`):**
   - `SemanticReleasePlugin` — base class every plugin extends. Provides the lifecycle skeleton: `resolveConfig()` → `validateConfig()` → `throwIfErrors()` → `afterVerify()`, memoized behind `verifyConditions()` (runs once per plugin instance via the `verified` flag).
   - `ensureVerified(pluginConfig, context, { soft })` — re-runs `verifyConditions`; with `soft: true` it swallows verification failures and logs instead of throwing, for hooks that must not fail the whole release (e.g. a notification).
@@ -15,7 +15,7 @@ This is a collection of reusable **semantic-release plugins** (`@team-internet/s
   - `createPluginHooks(pluginInstance, hookNames)` — binds the named methods on a plugin instance and returns them as a hooks object; every plugin's `index.js` calls this once and re-exports the result both as named exports (`export const verifyConditions = hooks.verifyConditions`, …) and as `export default hooks`. Do not hand-bind methods — always go through this helper.
   - Config validators: `validateRequiredConfig(name, code)` and `validateUrlConfig(name, code)` return a validator function `(config) => code | null`; `runConfigValidators(config, validators)` runs them and flattens/filters to an array of error codes.
   - Error codes are resolved through each plugin's `getError` (built with `createSemanticReleaseError(ERROR_DEFINITIONS, code)`), which looks up a same-named function in that plugin's `errors.js` returning `{ message, details }`. Unknown codes fall back to a generic `SemanticReleaseError`.
-  - Other utilities: `getContextEnv(context)` (context env with `process.env` fallback), `isDebugEnabled(env, namespace)` (checks `DEBUG=semantic-release:<namespace>` or `semantic-release:*`), `stripMarkdownLinks`, `escapeRegExp`.
+  - Other utilities: `getContextEnv(context)` (context env with `process.env` fallback), `isDebugEnabled(env, namespace)` (checks `DEBUG=semantic-release:<namespace>` or `semantic-release:*`), `escapeRegExp`, and two different note cleaners — `stripMarkdownLinks` (every link down to its text, for targets that reject markdown) and `stripInternalReleaseLinks` (only commit/compare/issue/Jira links, keeping documentation links intact). Don't reach for the internal-links one where all links have to go.
 - **Per-plugin file layout** (see `notify/`, `notes-override/` as the canonical examples):
   - `index.js` — instantiates the plugin class and calls `createPluginHooks(...)`; the only file semantic-release itself imports.
   - `resolve-config.js` — pure function merging `pluginConfig` with environment variables (**env vars take precedence over plugin config** — keep this precedence when adding options) into a normalized config object.
@@ -23,12 +23,20 @@ This is a collection of reusable **semantic-release plugins** (`@team-internet/s
   - `get-error.js` — one-liner wiring `errors.js` into `createSemanticReleaseError`.
   - Hook-specific logic lives in its own file (e.g. `notify/success.js`, `notify/post-message.js`, `maven/maven.js`, `maven/git.js`) rather than inline in the plugin class.
 - **Two class-construction styles in use, both valid:** most plugins (`notify`, `notes-override`) define the `class ... extends SemanticReleasePlugin` directly inside `index.js`. `maven` factors its class into a separate `plugin.js` and `index.js` only imports and wires it — prefer this split once a plugin's class grows non-trivial hooks (maven implements `prepare`, `publish`, and `success` beyond `verifyConditions`).
-- **`whmcs-build` (in progress):** currently has `errors.js`, `get-error.js`, `resolve-config.js`, `files.js` but no `index.js`/plugin class yet, and is not wired into `src/index.js` or `package.json#exports`. Follow the established per-plugin layout above when completing it.
+- **Optional peer dependencies:** `puppeteer` (whmcs-marketplace), `skia-canvas` (whmcs-build logo stamping) and `prettier` (whmcs-build output formatting) are optional `peerDependencies`, always reached through a dynamic `await import(...)` inside the plugin and asserted in `afterVerify` with a directed error. Never make one a hard `dependency`: every subpath's consumers would pay for it.
+- **`whmcs-marketplace`:** drives the WHMCS Marketplace listing forms with Puppeteer, because the Marketplace has no API. Structure to preserve when changing it:
+  - `session.js` owns launch, login and teardown (`MarketplaceSession`, `withSession`). Operations never launch a browser themselves.
+  - Every operation is a pair: a function taking an already authenticated session (`submitVersion`, `applyCompatibleVersions`, `removeVersion`, `readPublishedVersions`) plus the `(config, context)` operation that opens one. The session-level function is what the tests drive, through the fake page in `test/plugins/whmcs-marketplace/fake-page.js` — keep new browser work on that side of the split, or it becomes untestable.
+  - Logic that would otherwise live inside a `page.$$eval` closure is pulled back into a plain exported function (`shouldCheckVersion`, `chromeCandidates`) and the page-side callback reduced to reading or writing DOM properties. Page-side closures cannot reference anything outside themselves and cannot be unit tested.
+  - Marketplace failures are logged and returned as `false`, never thrown: the release is already tagged and published elsewhere by the time `publish` runs. **But the reason must survive** — `session.report(...)` (and `createReporter(context)` where there is no session) logs it unconditionally, because `debug` is off in most release jobs and a bare `false` reads as "nothing was published" for a rejected login, an expired password and a changed form alike. Read the Marketplace's own wording with `readAlertText` and put it in the message.
+  - **`prepare` installs the browser** (`install-browser.js`), and that is the only implementation of it in the repo: the `browser:install` script runs the same module directly (it has a main guard), and both CI and the devcontainer's `postCreateCommand` call that script. Do not add a second install path. Because `prepare` runs after `verifyConditions`, `afterVerify` must **not** require Chrome while `installBrowser` is true — it would fail every release before prepare could install one. semantic-release skips `prepare` entirely when no version is due, which is what keeps a dependency-bump push from downloading ~150MB.
+  - `extensions/I-Still-Dont-Care-About-Cookies` is vendored third-party code, dismissing the cookie banner that otherwise covers the login form. It is excluded from Prettier (`.prettierignore`) and from the `build` script's `node --check` sweep — don't reformat it, and keep new vendored assets excluded the same way.
 
 ## Coding Standards
 
-- Prettier is the only formatter/linter (`pnpm run lint` = `prettier --check .`, `pnpm run lint:fix` = `prettier --write .`) — there is no ESLint config in this repo.
+- Prettier is the only formatter/linter (`pnpm run lint` / `pnpm run lint:fix` over `./src/**/*.js` and `./test/**/*.js`) — there is no ESLint config in this repo. Keep the globs **quoted** in `package.json`: unquoted, `sh` expands `**` as a single level and the check silently covers only `src/core/index.js`.
 - Prefer small, focused modules over large files; keep plugin classes thin and push logic into sibling files (see Architecture above).
+- **One name per setting, and one implementation per job.** No legacy env-var spellings or alias subpaths kept for compatibility, and no second copy of a command in a shell script or a workflow — expose the module and call it.
 - Use named exports; avoid default exports except for a plugin's aggregate `hooks` object and `index.js` module entry points.
 - Config resolution functions are pure and take `(pluginConfig, context)` — do not reach into `process.env` directly outside `resolve-config.js`; always go through `getContextEnv`.
 
@@ -38,7 +46,10 @@ This is a collection of reusable **semantic-release plugins** (`@team-internet/s
 - **Test layout mirrors `src/`:** `test/plugins/<plugin>/*.test.js`.
 - **Mocking:** use `node:test`'s `mock.fn()` (e.g. mocking `globalThis.fetch`) — restore originals in `afterEach`. No mocking library dependency.
 - **Fixtures:** plugins that touch the filesystem (e.g. `replace`) create real temp directories via `mkdtemp`/`tmpdir()` and clean up in `afterEach`/`beforeEach` — don't mock `fs`.
-- **Integration tests** are named `*.integration.js` (not `*.test.js`) and are excluded from the default `pnpm test` glob — e.g. `test/plugins/notify/teams-notification.integration.js`, run explicitly via `pnpm run test:teams`. Use this suffix for any test that hits a real external endpoint.
+- **Integration tests** are named `*.integration.js` (not `*.test.js`) and are excluded from the default `pnpm test` glob — `test/plugins/notify/teams-notification.integration.js` (`pnpm run test:teams`), `test/plugins/whmcs-marketplace/browser.integration.js` (`pnpm run test:browser`) and `test/plugins/whmcs-marketplace/marketplace.integration.js` (`pnpm run test:whmcs`). Use this suffix for any test that hits a real external endpoint.
+- **`browser.integration.js` is the cheap half of the browser coverage:** it needs a browser but no credentials and publishes nothing, so it is the one to run after touching `session.js`, `page-utils.js` or the vendored extension. It asserts the extension really loaded (Chrome starts _without_ a broken unpacked extension silently) and that the live login form still has the selectors the plugin drives. It skips itself, naming the reason, when puppeteer or a browser is missing — keep that shape for anything similar.
+- The extension also has browser-free coverage in `cookie-extension.test.js`: manifest integrity, every asset it references, and that it stays inside `package.json#files` and `.prettierignore`. That one runs in the default suite.
+- **No test may reach the network or launch a browser from `pnpm test`.** A test calling an operation that opens a `MarketplaceSession` will silently start a real browser on any machine that happens to have puppeteer and Chrome — drive the session-level function with a fake session instead. For the same reason `resolve-chrome` takes its home-cache directory from config: a test asserting "no browser found" otherwise passes or fails depending on the developer's `~/.cache/puppeteer`.
 
 ### Running Tests
 
@@ -46,8 +57,10 @@ This is a collection of reusable **semantic-release plugins** (`@team-internet/s
 pnpm test              # node --test 'test/**/*.test.js'
 pnpm run test:coverage # adds --experimental-test-coverage over src/**/*.js
 pnpm run test:teams    # runs the Teams webhook integration test explicitly
-pnpm run lint          # prettier --check .
-pnpm run lint:fix      # prettier --write .
+pnpm run test:browser  # real Chrome against the live Marketplace, no credentials needed
+pnpm run test:whmcs    # WHMCS Marketplace round trip - needs credentials, publishes!
+pnpm run lint          # prettier --check "./src/**/*.js" "./test/**/*.js"
+pnpm run lint:fix      # prettier --write "./src/**/*.js" "./test/**/*.js"
 pnpm run build         # node --check on every src/test *.js file (syntax check, not a bundler)
 pnpm run ci            # build + test:coverage + lint — what CI runs
 ```
@@ -77,16 +90,17 @@ Because of this delegation, the test matrix, coverage handling, and Dependabot a
 
 ## Important Files
 
-| Path                            | Purpose                                                                                |
-| ------------------------------- | -------------------------------------------------------------------------------------- |
-| `src/core/index.js`             | `SemanticReleasePlugin` base class, `createPluginHooks`, validators, env/debug helpers |
-| `src/index.js`                  | Aggregate named exports for all plugins                                                |
-| `src/plugins/<name>/index.js`   | Per-plugin semantic-release hook entry point                                           |
-| `.releaserc.json`               | semantic-release config for this package's own releases                                |
-| `.githooks/pre-commit`          | Formats staged files and runs lint before every commit                                 |
-| `.github/workflows/test.yml`    | Delegates to shared `semantic-release-plugins-test.yml`                                |
-| `.github/workflows/release.yml` | Delegates to shared `semantic-release-plugins-release.yml`                             |
-| `.env.example`                  | Template for local env vars (copy to `.env`, git-ignored)                              |
+| Path                                               | Purpose                                                                                           |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `src/core/index.js`                                | `SemanticReleasePlugin` base class, `createPluginHooks`, validators, env/debug helpers            |
+| `src/index.js`                                     | Aggregate named exports for all plugins                                                           |
+| `src/plugins/<name>/index.js`                      | Per-plugin semantic-release hook entry point                                                      |
+| `.releaserc.json`                                  | semantic-release config for this package's own releases                                           |
+| `.githooks/pre-commit`                             | Formats staged files and runs lint before every commit                                            |
+| `.github/workflows/test.yml`                       | Delegates to shared `semantic-release-plugins-test.yml`                                           |
+| `.github/workflows/release.yml`                    | Delegates to shared `semantic-release-plugins-release.yml`                                        |
+| `.env.example`                                     | Template for local env vars (copy to `.env`, git-ignored)                                         |
+| `src/plugins/whmcs-marketplace/install-browser.js` | Browser provisioning: the `prepare` hook, `browser:install`, CI and the devcontainer all run this |
 
 ## Atlassian / JIRA
 

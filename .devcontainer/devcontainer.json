@@ -5,7 +5,11 @@
   // the gh credential helper, persistent shell history, dependency installation,
   // the shared VS Code extension set and the on-attach toolchain banner.
   //
-  // The tests are node:test with no runner to install, so nothing here declares a build step: devbase installs the dependencies and the container is ready.
+  // The tests are node:test with no runner to install, so nothing here declares
+  // a build step: devbase installs the dependencies and the container is ready.
+  // The one exception is the browser the whmcs-marketplace tests drive, which
+  // post-create installs: the image is built before the Feature puts Node in
+  // it, so there is nothing to run the installer with at build time.
   //
   // Feature options and troubleshooting:
   // https://github.com/centralnicgroup-opensource/rtldev-middleware-devcontainer-features
@@ -62,9 +66,28 @@
     "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,readonly",
     "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,consistency=cached",
     "source=${localEnv:HOME}${localEnv:USERPROFILE},target=/WSL_USER,type=bind,consistency=cached",
-    "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached"
-  ]
+    "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached",
+    // A named volume, not a bind: the Chrome build the marketplace tests drive is
+    // ~150MB of Linux binaries that have no business in the host's own puppeteer
+    // cache, and keeping it in a volume means a container rebuild does not
+    // download it again. install-browser.sh takes ownership of it on first use,
+    // since Docker creates a fresh volume owned by root.
+    "source=semantic-release-plugins-puppeteer,target=/home/vscode/.cache/puppeteer,type=volume"
+  ],
 
-  // No postCreateCommand: devbase installs pnpm, the global packages and this
-  // repository's dependencies, and seeds .env from .env.example.
+  // Everything else is devbase's; this only adds the browser the
+  // whmcs-marketplace tests drive. It runs the same installer the plugin's own
+  // prepare hook does, so there is one implementation of "install a browser"
+  // rather than one here and another in the plugin.
+  // `|| true` because the installer exits non-zero when it cannot install a
+  // browser, which is what CI wants and a devcontainer does not: everything
+  // except the two marketplace browser tests works without one, and both say
+  // so when they skip.
+  "postCreateCommand": {
+    "browser": "pnpm run browser:install || true"
+  }
+
+  // devbase installs pnpm, the global packages and this repository's
+  // dependencies, and seeds .env from .env.example, so postCreateCommand above
+  // only has to add what is specific to this repository.
 }

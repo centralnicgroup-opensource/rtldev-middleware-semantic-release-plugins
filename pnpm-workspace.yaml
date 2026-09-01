@@ -3,15 +3,23 @@ allowBuilds:
   # `onlyBuiltDependencies` until pnpm 11 replaced that field with `allowBuilds`
   # and left a placeholder here for a human to answer. (RSRMID-3008)
   skia-canvas: true
+  # puppeteer's postinstall downloads a Chrome build. Only the whmcs-marketplace
+  # integration test needs a browser, and it installs one explicitly
+  # (`pnpm exec puppeteer browsers install chrome --install-deps`) the same way
+  # the consuming release workflow does - so every other install, CI included,
+  # skips a ~150MB download it would never use. Declared as `false` rather than
+  # left out: an undeclared build script fails the install outright
+  # (ERR_PNPM_IGNORED_BUILDS). (RSRMID-3031)
+  puppeteer: false
 
-# Nothing here is installed until it is at least a day old. This is a supply-chain
-# control, not a tidiness rule: the npm attacks that actually hurt people publish a
-# compromised version of a real package and rely on automation to pull it into a build
-# within minutes. Setting this to 0 to make a red build go green removes the protection
-# at exactly the moment it is worth the most — wait instead.
-#
-# 1440 minutes is pnpm's default, declared explicitly so that it is a decision which can
-# be reported as drift rather than one inherited silently. One value across every
-# rtldev-middleware repository, enforced by node-policy.sh in the workspace repository.
-# (RSRMID-3018)
+  # Nothing here is installed until it is at least a day old. This is a supply-chain
+  # control, not a tidiness rule: the npm attacks that actually hurt people publish a
+  # compromised version of a real package and rely on automation to pull it into a build
+  # within minutes. Setting this to 0 to make a red build go green removes the protection
+  # at exactly the moment it is worth the most — wait instead.
+  #
+  # 1440 minutes is pnpm's default, declared explicitly so that it is a decision which can
+  # be reported as drift rather than one inherited silently. One value across every
+  # rtldev-middleware repository, enforced by node-policy.sh in the workspace repository.
+  # (RSRMID-3018)
 minimumReleaseAge: 1440

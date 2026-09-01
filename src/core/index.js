@@ -45,6 +45,15 @@ export function safeDecodeURIComponent(value = "") {
   }
 }
 
+/**
+ * Replaces every markdown link with its own link text. Used where the target
+ * renders plain text and rejects markdown, such as the WHMCS Marketplace
+ * changelog field.
+ */
+export function stripMarkdownLinks(value = "") {
+  return String(value).replace(/\[([^[\]]*)\]\([^()]*\)/gm, "$1");
+}
+
 export function stripInternalReleaseLinks(value = "") {
   return safeDecodeURIComponent(value).replace(
     /\(\[([^[\]]*)\]\(([^()]*)\)\)|\[([^[\]]*)\]\(([^()]*)\)/gi,
