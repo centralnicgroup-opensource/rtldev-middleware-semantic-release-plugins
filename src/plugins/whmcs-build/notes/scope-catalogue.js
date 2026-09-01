@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { globSync } from "glob";
+import micromatch from "micromatch";
 
 /**
  * The commit-scope vocabulary of a repository: which scope means which product,
@@ -163,6 +164,11 @@ export class ScopeCatalogue {
    * @param {string} [options.cwd] Where `paths` and `coverGlob` resolve.
    * @param {string} [options.coverGlob] Directories that must each be claimed
    *   by an entry's `paths` - e.g. "modules/*\/*". Skipped when not set.
+   *   `paths` are globs, so one entry can claim a family of directories
+   *   ("modules/registrars/cnic*"). A directory built during the release rather
+   *   than committed belongs outside `coverGlob` ("modules/*\/!(generated)"),
+   *   not in an entry: it exists in CI and not in a fresh checkout, which is a
+   *   property of the build, not of the scope.
    */
   check({ cwd = process.cwd(), coverGlob } = {}) {
     const errors = this.#conflicts.map(
@@ -195,9 +201,9 @@ export class ScopeCatalogue {
       }
     }
 
-    const claimed = new Set(this.entries.flatMap((entry) => entry.paths || []));
+    const claimed = this.entries.flatMap((entry) => entry.paths || []);
 
-    for (const claimedPath of claimed) {
+    for (const claimedPath of new Set(claimed)) {
       if (globSync(claimedPath, { cwd }).length === 0) {
         errors.push(
           `The scope catalogue points at missing path ${claimedPath}.`,
@@ -206,7 +212,7 @@ export class ScopeCatalogue {
     }
 
     for (const covered of coverGlob ? globSync(coverGlob, { cwd }) : []) {
-      if (!claimed.has(covered)) {
+      if (!micromatch.isMatch(covered, claimed)) {
         errors.push(
           `${covered} has no entry in the scope catalogue - its commits would render under a guessed name.`,
         );

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, test } from "node:test";
@@ -122,6 +122,42 @@ describe("whmcs-build release notes", () => {
 
       assert.equal(errors.length, 1);
       assert.match(errors[0], /"shared" is claimed by both "one" and "two"/);
+    });
+
+    test("claims a family of directories with one glob", async () => {
+      const root = await mkdtemp(path.join(tmpdir(), "catalogue-"));
+      await mkdir(path.join(root, "modules/registrars/cnic1"), {
+        recursive: true,
+      });
+      await mkdir(path.join(root, "modules/registrars/cnic2"), {
+        recursive: true,
+      });
+
+      const { errors } = catalogueOf([
+        {
+          scope: "cnic registrar module",
+          label: "CNIC Registrar Module",
+          paths: ["modules/registrars/cnic*"],
+        },
+      ]).check({ cwd: root, coverGlob: "modules/*/*" });
+
+      await rm(root, { recursive: true, force: true });
+      assert.deepEqual(errors, []);
+    });
+
+    test("reports a module no entry claims", async () => {
+      const root = await mkdtemp(path.join(tmpdir(), "catalogue-"));
+      await mkdir(path.join(root, "modules/addons/cnicorphan"), {
+        recursive: true,
+      });
+
+      const { errors } = catalogueOf([]).check({
+        cwd: root,
+        coverGlob: "modules/*/*",
+      });
+
+      await rm(root, { recursive: true, force: true });
+      assert.match(errors[0], /cnicorphan has no entry/);
     });
 
     test("reports an entry with an unusable audience", () => {
