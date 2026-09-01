@@ -93,3 +93,27 @@ export function PrettierMissing() {
       "Formatting the build output (`prettier`) requires the `prettier` package. Install it in the consuming project (`pnpm add -D prettier`) or disable the `prettier` option.",
   };
 }
+
+export function ScopeCatalogueUnreadable() {
+  return {
+    message: "Scope Catalogue Unreadable.",
+    details:
+      "The file named by `releaseNotes.scopesFile` could not be read or is not valid JSON.",
+  };
+}
+
+export function ScopeCatalogueInvalid() {
+  return {
+    message: "Scope Catalogue Invalid.",
+    details:
+      "Every entry needs a `scope` and a `label`, an `audience` of customer or internal, and no two entries may declare the same scope or alias.",
+  };
+}
+
+export function ScopeCatalogueNotFound() {
+  return {
+    message: "No Scope Catalogue Defined.",
+    details:
+      "`releaseNotes` is configured but names no catalogue. Set `releaseNotes.scopesFile` (a JSON file with a `scopes` array) or pass `releaseNotes.scopes` inline.",
+  };
+}

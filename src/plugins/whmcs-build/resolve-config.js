@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { getContextEnv, isDebugEnabled } from "../../core/index.js";
+import { ScopeCatalogue } from "./notes/scope-catalogue.js";
 
 function mergeOrDisable(base, override) {
   if (override === undefined) return base;
@@ -111,6 +112,54 @@ function normalizeBeforeBuild(beforeBuild) {
   };
 }
 
+/**
+ * Reads the scope catalogue the release notes are rendered from. The catalogue
+ * file carries the vocabulary specific to a product family - the entries, plus
+ * the optional words and acronyms - so this package stays brand neutral.
+ */
+function normalizeReleaseNotes(releaseNotes, cwd, env) {
+  if (!releaseNotes) {
+    return false;
+  }
+
+  const {
+    scopesFile,
+    scopes,
+    optionalWords,
+    acronyms,
+    audience,
+    preset = "angular",
+    includeScopes,
+    excludeScopes,
+    coverGlob,
+  } = releaseNotes;
+
+  let catalogue = null;
+  let unreadable = false;
+
+  if (scopes) {
+    catalogue = new ScopeCatalogue({ scopes, optionalWords, acronyms });
+  } else if (scopesFile) {
+    try {
+      catalogue = ScopeCatalogue.load(scopesFile, cwd);
+    } catch {
+      unreadable = true;
+    }
+  }
+
+  return {
+    cwd,
+    catalogue,
+    unreadable,
+    preset,
+    includeScopes,
+    excludeScopes,
+    coverGlob,
+    // Env wins over plugin config, as everywhere else in this package.
+    audience: env.RELEASE_NOTES_AUDIENCE || audience || "all",
+  };
+}
+
 function normalizeDistributionRepo(distributionRepo) {
   if (!distributionRepo) {
     return false;
@@ -137,6 +186,11 @@ function normalizeDistributionRepo(distributionRepo) {
     // enabled — a deploy key can push commits but can't create a release.
     sshKeyEnv: distributionRepo.sshKeyEnv || false,
     runSemanticRelease: distributionRepo.runSemanticRelease !== false,
+    // The notes the distribution repository publishes. A string, or a function
+    // of the release context for notes that have to be rendered per release -
+    // for example a customer-facing cut of the private notes. Left unset, the
+    // private release's own notes are republished, which is the old behaviour.
+    notes: distributionRepo.notes || false,
     releaseTarget: distributionRepo.releaseTarget || false,
     commitScope: distributionRepo.commitScope || "release",
     commitMessage: distributionRepo.commitMessage || false,
@@ -163,6 +217,7 @@ function resolveSingleConfig(pluginConfig, context) {
     beforeBuild: normalizeBeforeBuild(config.beforeBuild),
     archive: config.archive !== false,
     distributionRepo: normalizeDistributionRepo(config.distributionRepo),
+    releaseNotes: normalizeReleaseNotes(config.releaseNotes, cwd, env),
     debug: isDebugEnabled(env, "whmcs-build"),
   };
 }
@@ -175,7 +230,10 @@ export default (pluginConfig = {}, context) => {
   }
 
   const builds = config.builds.map((build) =>
-    resolveSingleConfig(build, context),
+    resolveSingleConfig(
+      { ...build, releaseNotes: config.releaseNotes },
+      context,
+    ),
   );
   if (config.distributionRepo !== undefined && builds[0]) {
     builds[0].distributionRepo = normalizeDistributionRepo(
@@ -183,5 +241,14 @@ export default (pluginConfig = {}, context) => {
     );
   }
 
-  return { builds };
+  // Release notes describe the release, not one build of it, so they stay at
+  // the top level as well - that is where generateNotes reads them.
+  return {
+    builds,
+    releaseNotes: normalizeReleaseNotes(
+      config.releaseNotes,
+      context?.cwd || process.cwd(),
+      getContextEnv(context),
+    ),
+  };
 };

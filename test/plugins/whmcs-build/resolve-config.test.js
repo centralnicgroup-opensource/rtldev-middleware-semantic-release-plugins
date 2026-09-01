@@ -98,6 +98,7 @@ describe("whmcs-build resolve-config", () => {
       releaserc: ".releaserc.distribution.json",
       tokenEnv: "DISTRIBUTION_REPO_TOKEN",
       sshKeyEnv: false,
+      notes: false,
       runSemanticRelease: true,
       releaseTarget: false,
       commitScope: "release",
