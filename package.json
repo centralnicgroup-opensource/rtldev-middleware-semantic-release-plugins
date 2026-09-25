@@ -96,8 +96,8 @@
     "@semantic-release/github": "^12.0.10",
     "@semantic-release/npm": "^13.2.0",
     "@semantic-release/release-notes-generator": "^14.1.1",
-    "prettier": "^3.9.8",
-    "puppeteer": "^25.11.0",
+    "prettier": "^3.9.9",
+    "puppeteer": "^25.12.0",
     "semantic-release": "^25.0.9"
   }
 }
