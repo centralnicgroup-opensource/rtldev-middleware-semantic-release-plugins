@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
+import * as marketplaceHooks from "../../../src/plugins/whmcs-marketplace/index.js";
 import WhmcsMarketplacePlugin from "../../../src/plugins/whmcs-marketplace/plugin.js";
 import resolveConfig from "../../../src/plugins/whmcs-marketplace/resolve-config.js";
 
@@ -102,8 +103,11 @@ describe("whmcs-marketplace plugin", () => {
   });
 
   describe("hooks", () => {
-    test("exposes prepare, which is what installs the browser", () => {
-      assert.equal(typeof new WhmcsMarketplacePlugin().prepare, "function");
+    // semantic-release only calls the hooks the module exports, so this has to
+    // check the entry point rather than the class: a prepare method that is not
+    // exported never runs, and the publish then finds no browser.
+    test("exports prepare, which is what installs the browser", () => {
+      assert.equal(typeof marketplaceHooks.prepare, "function");
     });
 
     test("defers the browser check when prepare will install one", async () => {
