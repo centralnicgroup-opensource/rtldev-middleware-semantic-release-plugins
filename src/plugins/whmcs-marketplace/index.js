@@ -5,11 +5,13 @@ const plugin = new WhmcsMarketplacePlugin();
 
 const hooks = createPluginHooks(plugin, [
   "verifyConditions",
+  "prepare",
   "publish",
   "fail",
 ]);
 
 export const verifyConditions = hooks.verifyConditions;
+export const prepare = hooks.prepare;
 export const publish = hooks.publish;
 export const fail = hooks.fail;
 
