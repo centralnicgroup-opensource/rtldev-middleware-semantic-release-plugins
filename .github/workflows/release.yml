@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  # Re-runs the release when GitHub drops the push event of a merge, which
+  # leaves no run to re-run.
+  workflow_dispatch:
 
 jobs:
   release:
