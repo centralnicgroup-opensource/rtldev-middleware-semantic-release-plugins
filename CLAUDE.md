@@ -79,6 +79,8 @@ pnpm run ci            # build + test:coverage + lint — what CI runs
 - **Releasing types:** only `fix` and `feat` bump the version (see `.releaserc.json` — `commit-analyzer` + `release-notes-generator` + `@semantic-release/npm`, `branches: ["main"]`). Use `chore`, `ci`, `docs`, `test`, `refactor`, `build` for everything else.
 - **Do not add `Co-Authored-By:` trailers** to commit messages in this repo.
 - **Default branch:** `main`.
+- **Branch naming:** prefix with the Jira issue ID — e.g. `RSRMID-2821-short-description`
+- **Pull requests:** always include the Jira issue link in the PR description. After opening the PR, add the PR URL as a comment on the Jira issue.
 - **Pre-commit hook** (`.githooks/pre-commit`, installed via `pnpm run hooks:install` → `git config core.hooksPath .githooks`, run automatically by the `prepare` script): runs `prettier --write` over staged `*.js`/`*.json`/`*.md`/`*.yml`/`*.yaml`, re-stages them, then runs `pnpm run lint`.
 
 ## CI / GitHub Actions
@@ -112,22 +114,9 @@ Because of this delegation, the test matrix, coverage handling, and Dependabot a
 
 ## Atlassian / JIRA
 
-- **Cloud ID:** `4e50e119-d5ea-4f89-afb1-d4cd47e40177`
-- **Default project:** `RSRMID` (3rd-party Software Integrations / Middleware)
-- **Work Category field:** `customfield_12383` (required, type: select)
-  - `13284` = Strategic
-  - `13285` = Maintain Revenue /BAU
-  - `13286` = Tech Debt
-  - `13287` = Security
-- **Business Unit field:** `customfield_10027` (required, type: multi-checkbox)
-  - `10187` = CentralNic Reseller (default)
-- **Issue types:** Task (`10002`), Bug (`10004`), Story (`10001`), Epic (`10000`)
-- **Workflow transitions:** To Do (`11`), In Progress (`21`), In Review (`41`), QA (`61`), Ready for Deployment (`51`), Done (`31`), Stand-by (`71`), Cancelled (`91`)
-- **Closing an issue (mandatory time tracking):** an issue will not stay in **Done** without a worklog — Jira automation stamps a `missing-time-spent` label on issues with no time logged and auto-reopens them. Correct sequence: (1) add a worklog (`timeSpent`); (2) remove the `missing-time-spent` label; (3) transition to Done (`31`). When the time amount isn't obvious, ask rather than guessing.
-- **Known account IDs:** Kai Schwarz `61358848ee2fd0006aac7b4f`, Asif Nawaz `62a84362bf7afc006f3b15e5`
-- **Issue descriptions:** always use ADF (Atlassian Document Format, JSON) — never markdown. Markdown renders literal `\n` characters instead of line breaks.
-- **Branch naming:** prefix with the Jira issue ID — e.g. `RSRMID-2821/short-description`
-- **Pull requests:** always include the Jira issue link in the PR description. After opening the PR, add the PR URL as a comment on the Jira issue.
+Work is tracked in **Jira Cloud**, project `RSRMID` — not GitHub Issues. Load the
+`jira-conventions` skill before creating, editing or transitioning an issue: it carries the
+required fields, this repository's title prefix and component, and the worklog rule for Done and Cancelled.
 
 ## Do NOT
 
