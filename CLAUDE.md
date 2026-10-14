@@ -79,6 +79,11 @@ pnpm run ci            # build + test:coverage + lint — what CI runs
 - **Releasing types:** only `fix` and `feat` bump the version (see `.releaserc.json` — `commit-analyzer` + `release-notes-generator` + `@semantic-release/npm`, `branches: ["main"]`). Use `chore`, `ci`, `docs`, `test`, `refactor`, `build` for everything else.
 - **Do not add `Co-Authored-By:` trailers** to commit messages in this repo.
 - **Default branch:** `main`.
+- **Branch creation:** before creating a branch, and again after any PR merges,
+  run `git checkout main && git pull --ff-only` first — it brings in the merged
+  commits and their release tags. Never branch from a stale local `main`, from
+  `origin/main` (it becomes the new branch's upstream) or from another feature
+  branch.
 - **Branch naming:** prefix with the Jira issue ID — e.g. `RSRMID-2821-short-description`
 - **Pull requests:** always include the Jira issue link in the PR description. After opening the PR, add the PR URL as a comment on the Jira issue.
 - **Pre-commit hook** (`.githooks/pre-commit`, installed via `pnpm run hooks:install` → `git config core.hooksPath .githooks`, run automatically by the `prepare` script): runs `prettier --write` over staged `*.js`/`*.json`/`*.md`/`*.yml`/`*.yaml`, re-stages them, then runs `pnpm run lint`.
