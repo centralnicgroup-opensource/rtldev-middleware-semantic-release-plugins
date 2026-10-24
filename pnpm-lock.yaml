@@ -7,46 +7,46 @@ importers:
     configDependencies: {}
     packageManagerDependencies:
       '@pnpm/exe':
-        specifier: 11.28.7
-        version: 11.28.7
+        specifier: 11.28.8
+        version: 11.28.8
       pnpm:
-        specifier: 11.28.7
-        version: 11.28.7
+        specifier: 11.28.8
+        version: 11.28.8
 
 packages:
 
-  '@pnpm/exe@11.28.7':
-    resolution: {integrity: sha512-hI26QnYhlehjYYTQRAGuJdB/y2g7zO9Zo2sobpsAehDCWWuSTxW/LcQ4/eZWnJZ40pEuGZyUsyDzgDidvCsSwQ==}
+  '@pnpm/exe@11.28.8':
+    resolution: {integrity: sha512-Lto4cG7yVeOUD2bshAe7IvnRf+e5YdtELD/lDe7hSDsq+19CgGIpqgT7ditOGCXV08qSkM5KpQ+zrNOE8G+Xdw==}
     hasBin: true
 
-  '@pnpm/linux-arm64@11.28.7':
-    resolution: {integrity: sha512-jxsrbSAwUTPjpnDxLlWsqgptlVRUS5MCWm+zlJcf3zbJQWHuZGA/aM3NXtBd8GAlXVKjJcG5tgSvz2jab8C1Xg==}
+  '@pnpm/linux-arm64@11.28.8':
+    resolution: {integrity: sha512-X/vwCeM6VkTnTs0fixkQJYVQk2KqFZ0LTUvli3UeW1pZkzFWFBw46rP0uBEAGN1KovYHveCTclNPVIC2geb0qw==}
     cpu: [arm64]
     os: [linux]
 
-  '@pnpm/linux-x64@11.28.7':
-    resolution: {integrity: sha512-Ic9jrwHtd98TaFWoZmXyVg0MGMjVLADPwR/WORO8LOt/Tcfgz6rpwW2aFvGoWF7JCa4jlKBiDGjS1AN7jHUWSg==}
+  '@pnpm/linux-x64@11.28.8':
+    resolution: {integrity: sha512-hM5kMJEqK5bkdaAdMwf/O+mwMuzw1XPm4QyRYMhmx/WcaE2rJ+X6FVUyA8ZuluGeeiZJ+jVmKhE35jV3vhkNJA==}
     cpu: [x64]
     os: [linux]
 
-  '@pnpm/linuxstatic-x64@11.28.7':
-    resolution: {integrity: sha512-KujY2/jw/ErwMLPI4wzy6be7GK5G3Hw7hARAHiIPUL3zt2Gh92ZxQjXUcxaRCyUq2O/BhFvdiDDkOtLcNhXFbg==}
+  '@pnpm/linuxstatic-x64@11.28.8':
+    resolution: {integrity: sha512-yovhCCE9MjqF1JBiERmFoqqqQ29/Fb6acOecetMH4JpBjqPuxjRUboecSPdouGOWOOA3aFqyRjNFgnG7t6wOZA==}
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  '@pnpm/macos-arm64@11.28.7':
-    resolution: {integrity: sha512-rsQBCOfX8KdxuPMloHOVwjiXoqTpLDFHeG8wHpSTRAMnGBWUCO4Mny/JcftA8xkZ+NN3pXmRKbKrahcRglvr2w==}
+  '@pnpm/macos-arm64@11.28.8':
+    resolution: {integrity: sha512-3SUDSqBWf8deRQerQFZLa2FO8tp4q6m6BWHAM7r3UWvxlcRPIfuMEA3AjIbA4MkMVMnhndX1q9Qq/0E66xC8wQ==}
     cpu: [arm64]
     os: [darwin]
 
-  '@pnpm/win-arm64@11.28.7':
-    resolution: {integrity: sha512-hTgBaIXDlrFnG3YYOhVjFs4r+GdPXGkElzzaCSEueCUEB8+A18GmQr4QjwobDGAu33j2Z0pZPMQCIIjuUwKcSQ==}
+  '@pnpm/win-arm64@11.28.8':
+    resolution: {integrity: sha512-q3dPhCB+aeTrPPON/TZ9ysvi2T6TzHcny91fDzQ9Rm6oA295deNkSp3Kn7bonDl4KD/NOkOv3IAQJCX64958Ew==}
     cpu: [arm64]
     os: [win32]
 
-  '@pnpm/win-x64@11.28.7':
-    resolution: {integrity: sha512-5gOJyQgmQwQCxaaVTpqwWTGAXyihdjbooWSvnt5hsBb3fjj9xgEwLuse7AgMSbZMM8LxKyBLpMv7acTTAHU1Ww==}
+  '@pnpm/win-x64@11.28.8':
+    resolution: {integrity: sha512-Mt/0b91EXt0B9mqy6itPxLNOeGz+leT6BGKgdUzEg0jcQ32GGeDGsjR0t5KImDsBuc1mlFDdAv7EbshYfU50kQ==}
     cpu: [x64]
     os: [win32]
 
@@ -110,41 +110,41 @@ packages:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
-  pnpm@11.28.7:
-    resolution: {integrity: sha512-IWGjCi3GSwwPCXhklvvOXwYb6WuP8R8LyY5rxnXgB0zrIluRl6J48vFx5sn7lxvR34ky5bwxBTuszdUrFaGuJg==}
+  pnpm@11.28.8:
+    resolution: {integrity: sha512-9piKMgRrmj9419fuB0eSa76QX/nf9zvxmruHvX0ZBqKskNk/c74ytfnhTCiZVpvLDJxeyKGeCD9dcburbdnguA==}
     engines: {node: '>=22.13'}
     hasBin: true
 
 snapshots:
 
-  '@pnpm/exe@11.28.7':
+  '@pnpm/exe@11.28.8':
     dependencies:
       '@reflink/reflink': 0.1.19
       detect-libc: 2.1.2
     optionalDependencies:
-      '@pnpm/linux-arm64': 11.28.7
-      '@pnpm/linux-x64': 11.28.7
-      '@pnpm/linuxstatic-x64': 11.28.7
-      '@pnpm/macos-arm64': 11.28.7
-      '@pnpm/win-arm64': 11.28.7
-      '@pnpm/win-x64': 11.28.7
+      '@pnpm/linux-arm64': 11.28.8
+      '@pnpm/linux-x64': 11.28.8
+      '@pnpm/linuxstatic-x64': 11.28.8
+      '@pnpm/macos-arm64': 11.28.8
+      '@pnpm/win-arm64': 11.28.8
+      '@pnpm/win-x64': 11.28.8
 
-  '@pnpm/linux-arm64@11.28.7':
+  '@pnpm/linux-arm64@11.28.8':
     optional: true
 
-  '@pnpm/linux-x64@11.28.7':
+  '@pnpm/linux-x64@11.28.8':
     optional: true
 
-  '@pnpm/linuxstatic-x64@11.28.7':
+  '@pnpm/linuxstatic-x64@11.28.8':
     optional: true
 
-  '@pnpm/macos-arm64@11.28.7':
+  '@pnpm/macos-arm64@11.28.8':
     optional: true
 
-  '@pnpm/win-arm64@11.28.7':
+  '@pnpm/win-arm64@11.28.8':
     optional: true
 
-  '@pnpm/win-x64@11.28.7':
+  '@pnpm/win-x64@11.28.8':
     optional: true
 
   '@reflink/reflink-darwin-arm64@0.1.19':
@@ -184,7 +184,7 @@ snapshots:
 
   detect-libc@2.1.2: {}
 
-  pnpm@11.28.7: {}
+  pnpm@11.28.8: {}
 
 ---
 lockfileVersion: '9.0'
@@ -244,8 +244,8 @@ importers:
         specifier: ^3.9.10
         version: 3.9.10
       puppeteer:
-        specifier: ^25.15.0
-        version: 25.15.0
+        specifier: ^25.16.0
+        version: 25.16.0
       semantic-release:
         specifier: ^25.0.9
         version: 25.0.9(supports-color@7.2.0)
@@ -346,8 +346,8 @@ packages:
     resolution: {integrity: sha512-//0sR/cow/s4ICQaYoAobOl4aU8cjU6x/V24V7XkKotb9+O+3zySIYp146vpaobYHnxa4pZX8NkV54Z5AwbDKA==}
     engines: {node: '>=12'}
 
-  '@puppeteer/browsers@3.2.5':
-    resolution: {integrity: sha512-UoCo3Pynbm37aLEEoydSiG+t24ui7sLD40+07CKxzxNy4PpSowJMkvlLIiV67XjP1lMVynhQVnuwlTABqBH8LQ==}
+  '@puppeteer/browsers@3.2.6':
+    resolution: {integrity: sha512-MJP29gVoHznmqmwhH1tlZqzfeQ3aylTpSSa6WKZXtkwYUH02i9imBmWGTyZrbnAou5paX78SE4jMAUqnEPf8ug==}
     engines: {node: '>=22.12.0'}
     hasBin: true
     peerDependencies:
@@ -738,8 +738,8 @@ packages:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
-  devtools-protocol@0.0.1696802:
-    resolution: {integrity: sha512-FO5/SENfvc2K8wRnWQflKcwuoTH4dBkXCWTQ9ebIWtuX8JM5+ZvCotaEmkfh21pO7TvIKGTM3hG4xFiq9WTwmg==}
+  devtools-protocol@0.0.1704951:
+    resolution: {integrity: sha512-GQhQOs9u/Mvm1zMtJIH872JS4AskuZdUSsPNPk4ChahtWAUqgz6atEtIsMt+nO7MqF1Ic4HxII/k8Cu36JivNg==}
 
   dir-glob@3.0.1:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
@@ -1381,12 +1381,12 @@ packages:
       kerberos:
         optional: true
 
-  puppeteer-core@25.15.0:
-    resolution: {integrity: sha512-DEk7S2tlBDp4+iXdnHjFmMofoqVftlz1JO4eyE+oBSiQIfIVTYq8hWF1EsjmRvD49chxGX3oKQT5hX2dnIIDdg==}
+  puppeteer-core@25.16.0:
+    resolution: {integrity: sha512-VA5Pf54N8shfopNkZZXCdiiwfnnY8ZJYAMqFQRhlH5mGUhfwf53Ar770GPtdpTDLUqvQeYpIBtC9/G2Jij2IJw==}
     engines: {node: '>=22.12.0'}
 
-  puppeteer@25.15.0:
-    resolution: {integrity: sha512-b+2Ye8C55Fi1u+w680WdDx4QWE4NVM1MKpB8YRXkbBngf335e/omAKI5/lPTSaAMmqHw199eEf90iFXPjJUYCw==}
+  puppeteer@25.16.0:
+    resolution: {integrity: sha512-LOr3reYnxAYYfQkpopz1fQnL0LdvqhpR5U2Fu+QnwzTX2gpVTHsn91UETo5NNC1md2/oC54Zu1ChBXgZDNSP1A==}
     engines: {node: '>=22.12.0'}
     hasBin: true
 
@@ -1875,7 +1875,7 @@ snapshots:
       '@pnpm/network.ca-file': 1.0.2
       config-chain: 1.1.13
 
-  '@puppeteer/browsers@3.2.5':
+  '@puppeteer/browsers@3.2.6':
     dependencies:
       modern-tar: 0.8.6
       yargs: 18.2.0
@@ -2136,9 +2136,9 @@ snapshots:
 
   char-regex@1.0.2: {}
 
-  chromium-bidi@157.0.8090-0(devtools-protocol@0.0.1696802):
+  chromium-bidi@157.0.8090-0(devtools-protocol@0.0.1704951):
     dependencies:
-      devtools-protocol: 0.0.1696802
+      devtools-protocol: 0.0.1704951
       mitt: 3.0.1
       zod: 4.6.7
 
@@ -2266,7 +2266,7 @@ snapshots:
 
   detect-libc@2.1.2: {}
 
-  devtools-protocol@0.0.1696802: {}
+  devtools-protocol@0.0.1704951: {}
 
   dir-glob@3.0.1:
     dependencies:
@@ -2779,11 +2779,11 @@ snapshots:
 
   proxy-agent-negotiate@1.1.0: {}
 
-  puppeteer-core@25.15.0:
+  puppeteer-core@25.16.0:
     dependencies:
-      '@puppeteer/browsers': 3.2.5
-      chromium-bidi: 157.0.8090-0(devtools-protocol@0.0.1696802)
-      devtools-protocol: 0.0.1696802
+      '@puppeteer/browsers': 3.2.6
+      chromium-bidi: 157.0.8090-0(devtools-protocol@0.0.1704951)
+      devtools-protocol: 0.0.1704951
       typed-query-selector: 2.12.3
       webdriver-bidi-protocol: 1.0.1
       ws: 8.22.0
@@ -2793,13 +2793,13 @@ snapshots:
       - utf-8-validate
       - yauzl
 
-  puppeteer@25.15.0:
+  puppeteer@25.16.0:
     dependencies:
-      '@puppeteer/browsers': 3.2.5
-      chromium-bidi: 157.0.8090-0(devtools-protocol@0.0.1696802)
-      devtools-protocol: 0.0.1696802
+      '@puppeteer/browsers': 3.2.6
+      chromium-bidi: 157.0.8090-0(devtools-protocol@0.0.1704951)
+      devtools-protocol: 0.0.1704951
       lilconfig: 3.1.4
-      puppeteer-core: 25.15.0
+      puppeteer-core: 25.16.0
       typed-query-selector: 2.12.3
     transitivePeerDependencies:
       - bufferutil
