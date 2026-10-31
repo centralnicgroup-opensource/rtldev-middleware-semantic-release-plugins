@@ -57,7 +57,7 @@
     "@semantic-release/error": "^4.0.0",
     "archiver": "^8.0.0",
     "execa": "^10.2.1",
-    "glob": "^13.0.6",
+    "glob": "^14.0.2",
     "micromatch": "^4.0.8",
     "replace-in-file": "^9.0.0"
   },
