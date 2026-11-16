@@ -220,7 +220,7 @@ importers:
         version: 9.0.0
       skia-canvas:
         specifier: '>=1'
-        version: 4.0.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
+        version: 4.0.1(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
     devDependencies:
       '@semantic-release/changelog':
         specifier: ^7.0.0
@@ -414,47 +414,47 @@ packages:
     resolution: {integrity: sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ==}
     engines: {node: '>=18'}
 
-  '@skia-canvas/darwin-arm64@4.0.0':
-    resolution: {integrity: sha512-0THbyAdihsVc+C8dB44BWDUxYPs8g6XY19Az77Q6F3ExUpod+QpJAkKdZ8fHB8PGtj74WzsjFt+5Ns/R+RD83A==}
+  '@skia-canvas/darwin-arm64@4.0.1':
+    resolution: {integrity: sha512-agmys9AtQDf+T1ukYHOQrqssWV7qsw252rQlYdZitLaopkVzs3MQm9CTbqoWmnXkHLupXHfw1C5mVyou1XdoDQ==}
     cpu: [arm64]
     os: [darwin]
 
-  '@skia-canvas/darwin-x64@4.0.0':
-    resolution: {integrity: sha512-cZRlVDjUVlSegG63kyTY0dMG95RUTw0ZwgkUMnMoLzrp73F2T6KcX3QFAmp2CRW/405i04Mo0PLTK5Y24gLMUA==}
+  '@skia-canvas/darwin-x64@4.0.1':
+    resolution: {integrity: sha512-w9IX9oPtOPLOGzrtSCREdu+U3myKqz7oUcfphXvXLtYclWPtlMIn2ZDVLqPPR+/Hpk+/dLlCsA4XC+6gLIYg2A==}
     cpu: [x64]
     os: [darwin]
 
-  '@skia-canvas/linux-arm64-glibc@4.0.0':
-    resolution: {integrity: sha512-/wJRyiIZjFSPtHf/Zwo7chEM5o2P12mS3+N2h8uckNstSlT3P/CWlOi8HjO9OBSypbLhwz4gJfWW7eS+lY6lyw==}
+  '@skia-canvas/linux-arm64-glibc@4.0.1':
+    resolution: {integrity: sha512-2lHGi1PEK1pAXzr/9Atim6IoZ7eTgIl5r9xt7jYVtnZS9E1QRJYiJKNiOLGaWr29AMY5McMYcwfiIO/mzTrdVQ==}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@skia-canvas/linux-arm64-musl@4.0.0':
-    resolution: {integrity: sha512-rbFMxYZ1wgZjF2l+Tx5ve+oTc3ZLHyDyAQRP6dKfbxIUHGUi8zgdpV754jM+VvkuqW9ljzc2sOYe3izrpfYByQ==}
+  '@skia-canvas/linux-arm64-musl@4.0.1':
+    resolution: {integrity: sha512-UctbI9FPwnZ5iwgNbPJk2BRMnhJ/9mUVJY8MDdfiwN/2sXW2O7JHt+HJrwznQHu5sc5CPv09r03ycyJEo4dKTA==}
     cpu: [arm64]
     os: [linux]
     libc: [musl]
 
-  '@skia-canvas/linux-x64-glibc@4.0.0':
-    resolution: {integrity: sha512-rpgx6WX6OrNFuBNz1tjOnxbNG6il5wfe72HhpA6fOo1ZBWPgzmHEmeAXvSMvhbnsJEdcfBV9akThufzitQ4sgA==}
+  '@skia-canvas/linux-x64-glibc@4.0.1':
+    resolution: {integrity: sha512-JZ3i8ohkEA88WDjbqcw260x+iFv64HtgmXHQLAsyMAClMPpxxrarNUTlQEUOV+noakvX0dyTXRd3JW66eaLgRA==}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@skia-canvas/linux-x64-musl@4.0.0':
-    resolution: {integrity: sha512-xOh7dt9Z5pAMVc6KNkJEu906usaa5HAUEQ8CwEQHWtiZQNvQx6Ma71+I0c4mEWFEJaA1mwK5xUoGSzONY+wsmw==}
+  '@skia-canvas/linux-x64-musl@4.0.1':
+    resolution: {integrity: sha512-NkD2hhuBo0OQmMmP64BtAG/zeRo/V3u3aRXfy/wDuoiiDFtjHqJB08PhGANu4tnYgvppZCbzsh5xuSD1hWkBKg==}
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  '@skia-canvas/win32-arm64@4.0.0':
-    resolution: {integrity: sha512-5+yXHAQLp0jacna/zhLKMfesDfKcZBXoKxcu82adLYI6vu5hj5P+iUI2416rfRdeUzX/E9n+mIfKTylEHgIdMA==}
+  '@skia-canvas/win32-arm64@4.0.1':
+    resolution: {integrity: sha512-K48VJ0cAbmxmPX9q7Hvs9YW/cF9c/4Q2uBaRumjNdMJ7VbhIOuk8HQCrCJNNoTVi3JJY7RoA/x43+HWiJ0bNBQ==}
     cpu: [arm64]
     os: [win32]
 
-  '@skia-canvas/win32-x64@4.0.0':
-    resolution: {integrity: sha512-qLmlrca+VRR+JZAmN0TYCmztVabi3YWKAbxXD9HLHcUP5HKOk2wh+y/9nMqJsJLQyQqItBeNjnLHLfsDS65RnQ==}
+  '@skia-canvas/win32-x64@4.0.1':
+    resolution: {integrity: sha512-OLv/NPt8pKT/OrPqaetaYNbYd33ZJvjoz1qEL+gcShTEQOsoPA4lp8abwYsbo0+/+O/Nxw601/t5J60QZmcGRQ==}
     cpu: [x64]
     os: [win32]
 
@@ -1482,8 +1482,8 @@ packages:
     resolution: {integrity: sha512-iuh+gPf28RkltuJC7W5MRi6XAjTDCAPC/prJUpQoG4vIP3MJZ+GTydVnodXA7pwvTKb2cA0m9OFZW/cdWy/I/w==}
     engines: {node: '>=6'}
 
-  skia-canvas@4.0.0:
-    resolution: {integrity: sha512-Y4K2xKy1nxj6fhT/ZTHQ+KJnSqV/oOXqbgjML8ie2Jj8eJ3satsiz9y/L8OWYclpNhEAvBSOIurdZ9hDs6fsGA==}
+  skia-canvas@4.0.1:
+    resolution: {integrity: sha512-EdHk0VDe/qe/FfwfW2C8y8/Rl0a28z1ZGQMkgPnoIehP6Gikv4cHiHCen6MWnY1e8zvliDnxGu70zaA9e7Mc7w==}
     engines: {node: '>=18'}
 
   skin-tone@2.0.0:
@@ -1986,28 +1986,28 @@ snapshots:
 
   '@sindresorhus/merge-streams@4.0.0': {}
 
-  '@skia-canvas/darwin-arm64@4.0.0':
+  '@skia-canvas/darwin-arm64@4.0.1':
     optional: true
 
-  '@skia-canvas/darwin-x64@4.0.0':
+  '@skia-canvas/darwin-x64@4.0.1':
     optional: true
 
-  '@skia-canvas/linux-arm64-glibc@4.0.0':
+  '@skia-canvas/linux-arm64-glibc@4.0.1':
     optional: true
 
-  '@skia-canvas/linux-arm64-musl@4.0.0':
+  '@skia-canvas/linux-arm64-musl@4.0.1':
     optional: true
 
-  '@skia-canvas/linux-x64-glibc@4.0.0':
+  '@skia-canvas/linux-x64-glibc@4.0.1':
     optional: true
 
-  '@skia-canvas/linux-x64-musl@4.0.0':
+  '@skia-canvas/linux-x64-musl@4.0.1':
     optional: true
 
-  '@skia-canvas/win32-arm64@4.0.0':
+  '@skia-canvas/win32-arm64@4.0.1':
     optional: true
 
-  '@skia-canvas/win32-x64@4.0.0':
+  '@skia-canvas/win32-x64@4.0.1':
     optional: true
 
   '@types/normalize-package-data@2.4.4': {}
@@ -2947,20 +2947,20 @@ snapshots:
       figures: 2.0.0
       pkg-conf: 2.1.0
 
-  skia-canvas@4.0.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0):
+  skia-canvas@4.0.1(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0):
     dependencies:
       detect-libc: 2.1.2
       follow-redirects: 1.16.3(debug@4.4.3(supports-color@7.2.0))
       https-proxy-agent: 9.1.0(supports-color@7.2.0)
     optionalDependencies:
-      '@skia-canvas/darwin-arm64': 4.0.0
-      '@skia-canvas/darwin-x64': 4.0.0
-      '@skia-canvas/linux-arm64-glibc': 4.0.0
-      '@skia-canvas/linux-arm64-musl': 4.0.0
-      '@skia-canvas/linux-x64-glibc': 4.0.0
-      '@skia-canvas/linux-x64-musl': 4.0.0
-      '@skia-canvas/win32-arm64': 4.0.0
-      '@skia-canvas/win32-x64': 4.0.0
+      '@skia-canvas/darwin-arm64': 4.0.1
+      '@skia-canvas/darwin-x64': 4.0.1
+      '@skia-canvas/linux-arm64-glibc': 4.0.1
+      '@skia-canvas/linux-arm64-musl': 4.0.1
+      '@skia-canvas/linux-x64-glibc': 4.0.1
+      '@skia-canvas/linux-x64-musl': 4.0.1
+      '@skia-canvas/win32-arm64': 4.0.1
+      '@skia-canvas/win32-x64': 4.0.1
     transitivePeerDependencies:
       - debug
       - kerberos
