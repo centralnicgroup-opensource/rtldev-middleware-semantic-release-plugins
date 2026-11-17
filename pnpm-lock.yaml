@@ -1643,8 +1643,8 @@ packages:
     resolution: {integrity: sha512-NoSdpq/WEiAg5sjmBkmV/hfxv6HJH4NqPNrqjtSO5CwRmpsDfaf4begxW34KdJykH/l1yHtwBWQkCRdoXO8mPA==}
     engines: {node: '>=20'}
 
-  typed-query-selector@2.12.3:
-    resolution: {integrity: sha512-/dtuMZyutHLlrxWhhC1uib00ELUr2dZ8C9B8YzZYsJmeE3V56OxRblrSM2UaF142pcMtak7ehZ6+poWGeehNIg==}
+  typed-query-selector@2.12.4:
+    resolution: {integrity: sha512-lF6/OY655DSWZeuNovde8TZhju6QyC0Xtav57b07oZQ1EQvfSowA3+WfLEhvFJOc9sVfAtW5hie1lGIppOqbpQ==}
 
   uglify-js@3.19.3:
     resolution: {integrity: sha512-v3Xu+yuwBXisp6QYTcH4UbH+xYJXqnq2m/LtQVWKWzYc1iehYnLixoQDN9FH6/j9/oybfd6W9Ghwkl8+UMKTKQ==}
@@ -2794,7 +2794,7 @@ snapshots:
       '@puppeteer/browsers': 3.2.7
       chromium-bidi: 157.0.8090-0(devtools-protocol@0.0.1717327)
       devtools-protocol: 0.0.1717327
-      typed-query-selector: 2.12.3
+      typed-query-selector: 2.12.4
       webdriver-bidi-protocol: 1.0.2
       ws: 8.23.0
     transitivePeerDependencies:
@@ -2810,7 +2810,7 @@ snapshots:
       devtools-protocol: 0.0.1717327
       lilconfig: 3.1.5
       puppeteer-core: 25.17.0
-      typed-query-selector: 2.12.3
+      typed-query-selector: 2.12.4
     transitivePeerDependencies:
       - bufferutil
       - proxy-agent
@@ -3141,7 +3141,7 @@ snapshots:
     dependencies:
       tagged-tag: 1.0.0
 
-  typed-query-selector@2.12.3: {}
+  typed-query-selector@2.12.4: {}
 
   uglify-js@3.19.3:
     optional: true
