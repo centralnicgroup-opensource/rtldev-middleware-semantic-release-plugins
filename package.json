@@ -98,6 +98,6 @@
     "@semantic-release/release-notes-generator": "^14.1.1",
     "prettier": "^3.10.1",
     "puppeteer": "^25.18.1",
-    "semantic-release": "^25.0.9"
+    "semantic-release": "^26.0.1"
   }
 }
