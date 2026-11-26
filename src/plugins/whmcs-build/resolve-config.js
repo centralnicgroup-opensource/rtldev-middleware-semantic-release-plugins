@@ -83,7 +83,8 @@ function normalizeLogoStamp(logoStamp) {
     input: logoStamp.input || false,
     output: logoStamp.output || false,
     fontSize: logoStamp.fontSize || 41,
-    color: logoStamp.color || "grey",
+    // "gray", not "grey": skia-canvas 4 ignores "grey" and stamps in black
+    color: logoStamp.color || "gray",
     padding: logoStamp.padding || 5,
   };
 }

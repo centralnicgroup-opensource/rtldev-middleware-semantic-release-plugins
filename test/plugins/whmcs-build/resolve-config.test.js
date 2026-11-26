@@ -129,7 +129,7 @@ describe("whmcs-build resolve-config", () => {
       input: "raw_logo.png",
       output: "logo.png",
       fontSize: 41,
-      color: "grey",
+      color: "gray",
       padding: 5,
     });
   });
